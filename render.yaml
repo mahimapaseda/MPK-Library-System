@@ -1,0 +1,38 @@
+services:
+  - type: web
+    name: mpk-library-system
+    env: docker
+    plan: free
+    repo: https://github.com/mahimapaseda/MPK-Library-System
+    branch: main
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    envVars:
+      - key: APP_NAME
+        value: "MPK Library System"
+      - key: APP_ENV
+        value: production
+      - key: APP_DEBUG
+        value: "false"
+      - key: APP_KEY
+        generateValue: true
+      - key: SESSION_DRIVER
+        value: file
+      - key: CACHE_STORE
+        value: file
+      - key: QUEUE_CONNECTION
+        value: sync
+      - key: LOG_CHANNEL
+        value: stderr
+      - key: LOG_LEVEL
+        value: error
+      - key: FILESYSTEM_DISK
+        value: local
+      # --- DATABASE ---
+      # Set these manually in the Render dashboard from your Neon/Supabase PostgreSQL credentials
+      # - key: DB_CONNECTION    value: pgsql
+      # - key: DB_HOST          value: <your-db-host>
+      # - key: DB_PORT          value: 5432
+      # - key: DB_DATABASE      value: <your-db-name>
+      # - key: DB_USERNAME      value: <your-db-user>
+      # - key: DB_PASSWORD      value: <your-db-password>
