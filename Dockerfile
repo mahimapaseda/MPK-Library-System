@@ -1,9 +1,11 @@
 FROM php:8.3-cli
 
-# Install system dependencies
+# Install system dependencies (including all libs needed by PHP extensions)
 RUN apt-get update && apt-get install -y \
     libzip-dev \
     libpng-dev \
+    libjpeg62-turbo-dev \
+    libfreetype6-dev \
     libpq-dev \
     libonig-dev \
     git \
@@ -11,8 +13,12 @@ RUN apt-get update && apt-get install -y \
     curl \
     && rm -rf /var/lib/apt/lists/*
 
-# Install required PHP extensions
-RUN docker-php-ext-install pdo pdo_pgsql pdo_mysql pdo_sqlite zip gd mbstring bcmath
+# Configure gd with jpeg + freetype support before installing
+RUN docker-php-ext-configure gd --with-freetype --with-jpeg
+
+# Install PHP extensions (gd separate because it needs configuring above)
+RUN docker-php-ext-install pdo pdo_pgsql pdo_mysql pdo_sqlite zip mbstring bcmath
+RUN docker-php-ext-install gd
 
 # Install Composer
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
