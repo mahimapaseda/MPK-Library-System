@@ -41,4 +41,5 @@ services:
         value: neondb_owner
       - key: DB_SSLMODE
         value: require
-      # DB_PASSWORD must be set manually in the Render dashboard - never commit passwords
+      - key: DB_PASSWORD
+        value: npg_C3bFVwX4inmJ
