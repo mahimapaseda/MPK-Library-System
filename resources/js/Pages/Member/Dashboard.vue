@@ -167,8 +167,10 @@ const typeBadgeClass = (type) => ({
 </template>
 
 <style scoped>
+@reference "../../../css/app.css";
+
 .glass-card {
-    @apply bg-white/3 border border-white/10 backdrop-blur-xl shadow-2xl;
+    @apply bg-white/5 border border-white/10 backdrop-blur-xl shadow-2xl;
 }
 .glow-indigo {
     @apply shadow-[0_0_40px_-10px_rgba(99,102,241,0.3)];

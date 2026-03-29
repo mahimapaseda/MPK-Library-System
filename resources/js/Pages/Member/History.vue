@@ -61,7 +61,7 @@ const { isFullScreen, toggleFullScreen } = useFullScreen();
                     <p class="text-xs font-bold text-slate-600 dark:text-slate-500 uppercase tracking-widest mt-2">A complete record of your interactions with the library</p>
                 </div>
                 <div class="flex gap-4">
-                    <div class="px-5 py-3 bg-white/3 border border-white/10 rounded-2xl text-center">
+                    <div class="px-5 py-3 bg-white/5 border border-white/10 rounded-2xl text-center">
                         <div class="text-xl font-black text-white leading-none">{{ history.total }}</div>
                         <div class="text-[8px] font-black text-slate-500 uppercase tracking-widest mt-1">Total Items</div>
                     </div>
@@ -130,8 +130,10 @@ const { isFullScreen, toggleFullScreen } = useFullScreen();
 </template>
 
 <style scoped>
+@reference "../../../css/app.css";
+
 .glass-card {
-    @apply bg-white/5 dark:bg-white/3 border border-white/15 dark:border-white/10 backdrop-blur-xl shadow-2xl;
+    @apply bg-white/5 dark:bg-white/5 border border-white/15 dark:border-white/10 backdrop-blur-xl shadow-2xl;
 }
 .glow-indigo {
     @apply shadow-[0_0_40px_-10px_rgba(99,102,241,0.3)];
