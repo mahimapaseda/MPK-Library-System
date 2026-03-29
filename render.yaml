@@ -28,11 +28,17 @@ services:
         value: error
       - key: FILESYSTEM_DISK
         value: local
-      # --- DATABASE ---
-      # Set these manually in the Render dashboard from your Neon/Supabase PostgreSQL credentials
-      # - key: DB_CONNECTION    value: pgsql
-      # - key: DB_HOST          value: <your-db-host>
-      # - key: DB_PORT          value: 5432
-      # - key: DB_DATABASE      value: <your-db-name>
-      # - key: DB_USERNAME      value: <your-db-user>
-      # - key: DB_PASSWORD      value: <your-db-password>
+      # --- DATABASE (non-secret values) ---
+      - key: DB_CONNECTION
+        value: pgsql
+      - key: DB_HOST
+        value: ep-empty-violet-amntgr7d-pooler.c-5.us-east-1.aws.neon.tech
+      - key: DB_PORT
+        value: "5432"
+      - key: DB_DATABASE
+        value: neondb
+      - key: DB_USERNAME
+        value: neondb_owner
+      - key: DB_SSLMODE
+        value: require
+      # DB_PASSWORD must be set manually in the Render dashboard - never commit passwords
