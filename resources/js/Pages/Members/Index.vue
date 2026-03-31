@@ -7,6 +7,7 @@ import { useAlert } from '@/composables/useAlert';
 
 const props = defineProps({
     members: Object,
+    memberTotals: Object,
     filters: Object
 });
 
@@ -16,13 +17,11 @@ const grade = ref(props.filters?.grade || '');
 const showAddModal = ref(false);
 
 const stats = computed(() => {
-    const rows = props.members?.data ?? [];
-
     return {
-        visibleMembers: rows.length,
-        students: rows.filter((member) => member.type === 'student').length,
-        teachers: rows.filter((member) => member.type === 'teacher').length,
-        staff: rows.filter((member) => member.type === 'staff').length,
+        visibleMembers: props.members?.total ?? 0,
+        students: props.memberTotals?.students ?? 0,
+        teachers: props.memberTotals?.teachers ?? 0,
+        staff: props.memberTotals?.staff ?? 0,
     };
 });
 
@@ -84,7 +83,7 @@ const deleteMember = async (id) => {
 </script>
 
 <template>
-    <AppLayout title="Members Management">
+    <AppLayout title="Members Management" :noScroll="true">
         <template #header>Library Members</template>
 
         <div class="space-y-5">
@@ -153,8 +152,8 @@ const deleteMember = async (id) => {
                 </div>
             </section>
 
-            <section class="glass-card rounded-3xl overflow-hidden mb-8">
-            <div class="overflow-x-auto">
+            <section class="glass-card rounded-3xl overflow-hidden flex flex-col max-h-[calc(100vh-460px)]">
+            <div class="overflow-x-auto overflow-y-auto">
                 <table class="w-full text-left border-collapse">
                     <thead>
                         <tr class="bg-slate-50/50 dark:bg-slate-900/50">
@@ -208,11 +207,13 @@ const deleteMember = async (id) => {
                     </tbody>
                 </table>
             </div>
-            <div class="px-8 py-4 bg-slate-50/50 dark:bg-slate-900/50 border-t border-white/5 dark:border-slate-800/30 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+            <div class="px-8 py-4 bg-slate-50/50 dark:bg-slate-900/50 border-t border-white/5 dark:border-slate-800/30 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shrink-0">
                 <span class="text-[10px] font-black text-slate-600 dark:text-slate-400 uppercase tracking-widest">Displaying {{ members.from }} – {{ members.to }} of {{ members.total }} Records</span>
                 <PaginationControls :links="members.links || []" />
             </div>
             </section>
+
+        </div>
 
         <transition enter-active-class="transition duration-300 ease-out" enter-from-class="opacity-0 scale-95" enter-to-class="opacity-100 scale-100" leave-active-class="transition duration-200 ease-in" leave-from-class="opacity-100 scale-100" leave-to-class="opacity-0 scale-95">
             <div v-if="showAddModal" class="fixed inset-0 bg-slate-900/20 dark:bg-black/60 backdrop-blur-md flex items-center justify-center p-4 z-50">

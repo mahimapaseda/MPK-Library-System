@@ -10,7 +10,7 @@ class MemberController extends Controller
 {
     public function index(Request $request)
     {
-        $members = Member::when($request->search, function ($query, $search) {
+        $memberQuery = Member::when($request->search, function ($query, $search) {
                 $query->where(function ($q) use ($search) {
                     $q->where('name', 'like', "%{$search}%")
                         ->orWhere('member_id', 'like', "%{$search}%");
@@ -21,13 +21,27 @@ class MemberController extends Controller
             })
             ->when($request->grade, function ($query, $grade) {
                 $query->where('grade', 'like', "%{$grade}%");
-            })
+            });
+
+        $members = (clone $memberQuery)
             ->latest()
             ->paginate(10)
             ->withQueryString();
 
+        $typeCounts = (clone $memberQuery)
+            ->selectRaw('type, COUNT(*) as total')
+            ->groupBy('type')
+            ->pluck('total', 'type');
+
+        $memberTotals = [
+            'students' => (int) ($typeCounts['student'] ?? 0),
+            'teachers' => (int) ($typeCounts['teacher'] ?? 0),
+            'staff' => (int) ($typeCounts['staff'] ?? 0),
+        ];
+
         return Inertia::render('Members/Index', [
             'members' => $members,
+            'memberTotals' => $memberTotals,
             'filters' => $request->only(['search', 'type', 'grade'])
         ]);
     }
