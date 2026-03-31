@@ -81,4 +81,41 @@ body::before {
     input:focus, select:focus {
         @apply ring-4 ring-indigo-500/20 outline-none;
     }
+
+    /* Global dark-mode readability boost across all pages */
+    .dark .glass-card,
+    .dark .glass-ghost {
+        background-color: rgba(15, 23, 42, 0.78) !important;
+        border-color: rgba(100, 116, 139, 0.52) !important;
+    }
+
+    .dark .text-slate-400 {
+        color: #cbd5e1 !important;
+    }
+
+    .dark .text-slate-500 {
+        color: #94a3b8 !important;
+    }
+
+    .dark .text-slate-600 {
+        color: #cbd5e1 !important;
+    }
+
+    .dark .text-slate-700 {
+        color: #e2e8f0 !important;
+    }
+
+    .dark input:not([type='checkbox']):not([type='radio']),
+    .dark textarea,
+    .dark select {
+        background-color: rgba(15, 23, 42, 0.82) !important;
+        border-color: rgba(100, 116, 139, 0.7) !important;
+        color: #f1f5f9 !important;
+    }
+
+    .dark input::placeholder,
+    .dark textarea::placeholder {
+        color: #94a3b8 !important;
+        opacity: 1;
+    }
 }

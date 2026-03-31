@@ -1,7 +1,9 @@
 <script setup>
 import AppLayout from '@/Layouts/AppLayout.vue';
-import { Head, Link, useForm, router } from '@inertiajs/vue3';
-import { ref, watch } from 'vue';
+import PaginationControls from '@/Components/PaginationControls.vue';
+import { useForm, router } from '@inertiajs/vue3';
+import { computed, ref, watch } from 'vue';
+import { useAlert } from '@/composables/useAlert';
 
 const props = defineProps({
     members: Object,
@@ -12,6 +14,19 @@ const search = ref(props.filters?.search || '');
 const filterType = ref(props.filters?.type || '');
 const grade = ref(props.filters?.grade || '');
 const showAddModal = ref(false);
+
+const stats = computed(() => {
+    const rows = props.members?.data ?? [];
+
+    return {
+        visibleMembers: rows.length,
+        students: rows.filter((member) => member.type === 'student').length,
+        teachers: rows.filter((member) => member.type === 'teacher').length,
+        staff: rows.filter((member) => member.type === 'staff').length,
+    };
+});
+
+const { confirm } = useAlert();
 
 const memberForm = useForm({
     member_id: '',
@@ -56,8 +71,13 @@ const resetFilters = () => {
     router.get('/members', {}, { preserveState: false });
 };
 
-const deleteMember = (id) => {
-    if (confirm('Are you sure you want to delete this member?')) {
+const deleteMember = async (id) => {
+    const confirmed = await confirm('Are you sure you want to delete this member?', {
+        title: 'Delete Member',
+        type: 'error',
+        confirmText: 'Delete'
+    });
+    if (confirmed) {
         router.delete(`/members/${id}`);
     }
 }
@@ -67,47 +87,73 @@ const deleteMember = (id) => {
     <AppLayout title="Members Management">
         <template #header>Library Members</template>
 
-        <div class="mb-5 sm:mb-6 flex flex-col gap-4">
-            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
-                <div class="relative w-full sm:w-96 group">
-                    <svg class="absolute left-4 top-3.5 h-5 w-5 text-slate-400 group-focus-within:text-indigo-500 transition-colors" viewBox="0 0 20 20" fill="currentColor">
-                        <path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd"/>
-                    </svg>
-                    <input v-model="search" type="text" placeholder="Search by name, ID, or grade…"
-                        class="w-full pl-11 pr-5 py-3 bg-white/50 dark:bg-slate-900/50 backdrop-blur-xl border-2 border-slate-100 dark:border-slate-800/50 rounded-2xl text-sm font-bold text-slate-800 dark:text-white placeholder:text-slate-400 focus:outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all">
+        <div class="space-y-5">
+            <section class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+                <div class="glass-card rounded-3xl p-5">
+                    <div class="text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-300">Visible members</div>
+                    <div class="mt-2 text-3xl font-black text-slate-900 dark:text-white">{{ stats.visibleMembers }}</div>
                 </div>
-                <button @click="showAddModal = true"
-                    class="px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl text-sm font-black uppercase tracking-widest shadow-2xl shadow-indigo-500/20 hover:glow-indigo transition-all flex items-center gap-2 shrink-0 active:scale-95">
-                    <svg class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd"/></svg>
-                    Add New Member
-                </button>
-            </div>
+                <div class="glass-card rounded-3xl p-5">
+                    <div class="text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-300">Students</div>
+                    <div class="mt-2 text-3xl font-black text-blue-600 dark:text-blue-300">{{ stats.students }}</div>
+                </div>
+                <div class="glass-card rounded-3xl p-5">
+                    <div class="text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-300">Teachers</div>
+                    <div class="mt-2 text-3xl font-black text-violet-600 dark:text-violet-300">{{ stats.teachers }}</div>
+                </div>
+                <div class="glass-card rounded-3xl p-5">
+                    <div class="text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-300">Staff</div>
+                    <div class="mt-2 text-3xl font-black text-slate-700 dark:text-slate-100">{{ stats.staff }}</div>
+                </div>
+            </section>
 
-            <!-- Filter Bar -->
-            <div class="flex flex-wrap items-center gap-3">
-                <div class="flex items-center bg-white/30 dark:bg-slate-900/30 backdrop-blur-md border-2 border-slate-100 dark:border-slate-800/50 rounded-xl p-1">
-                    <button v-for="t in ['', 'student', 'teacher', 'staff']" :key="t"
-                        @click="filterType = t"
-                        class="px-3 py-1.5 rounded-lg text-xs font-bold transition-all capitalize"
-                        :class="filterType === t ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-500 dark:text-slate-400 hover:bg-white/50 dark:hover:bg-slate-800/50'">
-                        {{ t || 'All' }}
+            <section class="glass-card rounded-3xl p-4 sm:p-5 lg:p-6 space-y-4">
+                <div class="flex flex-col xl:flex-row xl:items-center gap-4 justify-between">
+                    <div>
+                        <h3 class="text-xl font-black text-slate-900 dark:text-white tracking-tight">Member registry workspace</h3>
+                        <p class="text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-slate-300 mt-1">Search, segment, and onboard borrowers</p>
+                    </div>
+                    <button @click="showAddModal = true"
+                        class="px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl text-sm font-black uppercase tracking-widest shadow-2xl shadow-indigo-500/20 transition-all flex items-center gap-2 shrink-0 active:scale-95 w-full xl:w-auto justify-center">
+                        <svg class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd"/></svg>
+                        Add New Member
                     </button>
                 </div>
 
-                <div class="relative group">
-                    <input v-model="grade" type="text" placeholder="Filter by Grade…"
-                        class="px-4 py-2 bg-white/30 dark:bg-slate-900/30 backdrop-blur-md border-2 border-slate-100 dark:border-slate-800/50 rounded-xl text-xs font-bold text-slate-800 dark:text-white placeholder:text-slate-400 focus:outline-none focus:border-indigo-500 transition-all w-48">
+                <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-[minmax(0,1.4fr)_auto_16rem_auto] gap-3 items-end">
+                    <div class="relative group">
+                        <label class="block text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-300 mb-2 px-1">Search registry</label>
+                        <svg class="absolute left-4 top-[2.65rem] h-5 w-5 text-slate-400 group-focus-within:text-indigo-500 transition-colors" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd"/>
+                        </svg>
+                        <input v-model="search" type="text" placeholder="Name, member ID, or grade"
+                            class="w-full pl-11 pr-5 py-3 bg-white/60 dark:bg-slate-900/70 border-2 border-slate-100 dark:border-slate-700/70 rounded-2xl text-sm font-bold text-slate-800 dark:text-white placeholder:text-slate-400">
+                    </div>
+
+                    <div class="flex items-center bg-white/40 dark:bg-slate-900/50 border-2 border-slate-100 dark:border-slate-700/70 rounded-2xl p-1 overflow-x-auto">
+                        <button v-for="t in ['', 'student', 'teacher', 'staff']" :key="t"
+                            @click="filterType = t"
+                            class="px-3 py-2 rounded-xl text-xs font-bold transition-all capitalize whitespace-nowrap"
+                            :class="filterType === t ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-500 dark:text-slate-300 hover:bg-white/60 dark:hover:bg-slate-800/60'">
+                            {{ t || 'All' }}
+                        </button>
+                    </div>
+
+                    <div>
+                        <label class="block text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-300 mb-2 px-1">Grade / Dept</label>
+                        <input v-model="grade" type="text" placeholder="Grade filter"
+                            class="w-full px-4 py-3 bg-white/60 dark:bg-slate-900/70 border-2 border-slate-100 dark:border-slate-700/70 rounded-2xl text-xs font-bold text-slate-800 dark:text-white placeholder:text-slate-400">
+                    </div>
+
+                    <button v-if="search || filterType || grade"
+                        @click="resetFilters"
+                        class="px-4 py-3 rounded-2xl border border-rose-500/20 bg-rose-500/10 text-[10px] font-black uppercase tracking-widest text-rose-500 hover:bg-rose-500/15">
+                        Reset
+                    </button>
                 </div>
+            </section>
 
-                <button v-if="search || filterType || grade" 
-                    @click="resetFilters"
-                    class="text-[10px] font-black uppercase tracking-widest text-rose-500 hover:text-rose-600 transition-colors ml-auto">
-                    Reset Filters
-                </button>
-            </div>
-        </div>
-
-        <div class="glass-card rounded-3xl overflow-hidden mb-8">
+            <section class="glass-card rounded-3xl overflow-hidden mb-8">
             <div class="overflow-x-auto">
                 <table class="w-full text-left border-collapse">
                     <thead>
@@ -120,6 +166,12 @@ const deleteMember = (id) => {
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-white/5 dark:divide-slate-800/30">
+                        <tr v-if="!members.data?.length">
+                            <td colspan="5" class="px-8 py-16 text-center">
+                                <div class="text-sm font-black text-slate-700 dark:text-slate-200">No members match the current filters</div>
+                                <div class="text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-slate-300 mt-2">Try another segment or add a new registry entry</div>
+                            </td>
+                        </tr>
                         <tr v-for="member in members.data" :key="member.id" class="group hover:bg-white/40 dark:hover:bg-white/5 transition-colors">
                             <td class="px-8 py-5">
                                 <div class="flex items-center gap-4">
@@ -128,7 +180,7 @@ const deleteMember = (id) => {
                                     </div>
                                     <div class="min-w-0">
                                         <div class="text-sm font-black text-slate-800 dark:text-slate-100 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">{{ member.name }}</div>
-                                        <div class="text-[10px] font-bold text-slate-800 dark:text-slate-400 uppercase tracking-tighter mt-0.5 font-mono">{{ member.member_id }}</div>
+                                        <div class="text-[10px] font-bold text-slate-800 dark:text-slate-300 uppercase tracking-tighter mt-0.5 font-mono">{{ member.member_id }}</div>
                                     </div>
                                 </div>
                             </td>
@@ -140,11 +192,11 @@ const deleteMember = (id) => {
                                 }">{{ member.type }}
                                 </span>
                             </td>
-                            <td class="px-8 py-5 text-xs font-bold text-slate-800 dark:text-slate-400">{{ member.grade || '—' }}</td>
-                            <td class="px-8 py-5 text-xs font-bold text-slate-800 dark:text-slate-400 tracking-tighter">{{ member.contact_number || 'NO CONTACT' }}</td>
+                            <td class="px-8 py-5 text-xs font-bold text-slate-800 dark:text-slate-300">{{ member.grade || '—' }}</td>
+                            <td class="px-8 py-5 text-xs font-bold text-slate-800 dark:text-slate-300 tracking-tighter">{{ member.contact_number || 'NO CONTACT' }}</td>
                             <td class="px-8 py-5 text-right">
                                 <div class="flex justify-end space-x-2">
-                                    <button class="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-500/10 dark:hover:text-indigo-400 rounded-xl transition-all hover:scale-110 active:scale-90">
+                                    <button class="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-500/10 dark:hover:text-indigo-400 rounded-xl transition-all hover:scale-110 active:scale-90" title="Edit UI not yet connected">
                                         <svg class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z"/></svg>
                                     </button>
                                     <button @click="deleteMember(member.id)" class="p-2 text-slate-400 hover:text-rose-500 hover:bg-rose-500/10 dark:hover:text-rose-400 rounded-xl transition-all hover:scale-110 active:scale-90">
@@ -156,15 +208,11 @@ const deleteMember = (id) => {
                     </tbody>
                 </table>
             </div>
-            <div class="px-8 py-4 bg-slate-50/50 dark:bg-slate-900/50 border-t border-white/5 dark:border-slate-800/30 flex items-center justify-between">
+            <div class="px-8 py-4 bg-slate-50/50 dark:bg-slate-900/50 border-t border-white/5 dark:border-slate-800/30 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
                 <span class="text-[10px] font-black text-slate-600 dark:text-slate-400 uppercase tracking-widest">Displaying {{ members.from }} – {{ members.to }} of {{ members.total }} Records</span>
-                <div class="flex gap-2">
-                    <button class="px-3 py-1.5 glass-card text-[10px] font-black text-slate-400 uppercase tracking-widest rounded-lg hover:text-indigo-500 transition-colors cursor-not-allowed">Prev</button>
-                    <button class="px-3 py-1.5 bg-indigo-600 text-[10px] font-black text-white uppercase tracking-widest rounded-lg glow-indigo transition-all">1</button>
-                    <button class="px-3 py-1.5 glass-card text-[10px] font-black text-slate-400 uppercase tracking-widest rounded-lg hover:text-indigo-500 transition-colors cursor-not-allowed">Next</button>
-                </div>
+                <PaginationControls :links="members.links || []" />
             </div>
-        </div>
+            </section>
 
         <transition enter-active-class="transition duration-300 ease-out" enter-from-class="opacity-0 scale-95" enter-to-class="opacity-100 scale-100" leave-active-class="transition duration-200 ease-in" leave-from-class="opacity-100 scale-100" leave-to-class="opacity-0 scale-95">
             <div v-if="showAddModal" class="fixed inset-0 bg-slate-900/20 dark:bg-black/60 backdrop-blur-md flex items-center justify-center p-4 z-50">
@@ -181,13 +229,13 @@ const deleteMember = (id) => {
                     <form @submit.prevent="submitAddForm" class="p-8 space-y-6">
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div>
-                                <label class="block text-[10px] font-black text-slate-900 dark:text-slate-400 uppercase tracking-widest mb-2 px-1">Member Identification</label>
+                                <label class="block text-[10px] font-black text-slate-900 dark:text-slate-300 uppercase tracking-widest mb-2 px-1">Member Identification</label>
                                 <input v-model="memberForm.member_id" type="text" required placeholder="e.g. STU001"
                                     class="w-full px-5 py-3.5 bg-slate-50/50 dark:bg-slate-950/50 border-2 border-slate-100 dark:border-slate-800/50 rounded-2xl text-sm font-bold text-slate-800 dark:text-white placeholder:text-slate-400 focus:outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all">
                                 <p v-if="memberForm.errors.member_id" class="mt-2 text-[10px] font-bold text-rose-500 uppercase tracking-widest">{{ memberForm.errors.member_id }}</p>
                             </div>
                             <div>
-                                <label class="block text-[10px] font-black text-slate-900 dark:text-slate-400 uppercase tracking-widest mb-2 px-1">Account Type</label>
+                                <label class="block text-[10px] font-black text-slate-900 dark:text-slate-300 uppercase tracking-widest mb-2 px-1">Account Type</label>
                                 <select v-model="memberForm.type" required
                                     class="w-full px-5 py-3.5 bg-slate-50/50 dark:bg-slate-950/50 border-2 border-slate-100 dark:border-slate-800/50 rounded-2xl text-sm font-bold text-slate-800 dark:text-white focus:outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all">
                                     <option value="student">Student</option>
@@ -196,19 +244,19 @@ const deleteMember = (id) => {
                                 </select>
                             </div>
                             <div class="md:col-span-2">
-                                <label class="block text-[10px] font-black text-slate-900 dark:text-slate-400 uppercase tracking-widest mb-2 px-1">Institutional Email</label>
+                                <label class="block text-[10px] font-black text-slate-900 dark:text-slate-300 uppercase tracking-widest mb-2 px-1">Institutional Email</label>
                                 <input v-model="memberForm.email" type="email" required placeholder="name@institution.com"
                                     class="w-full px-5 py-3.5 bg-slate-50/50 dark:bg-slate-950/50 border-2 border-slate-100 dark:border-slate-800/50 rounded-2xl text-sm font-bold text-slate-800 dark:text-white placeholder:text-slate-400 focus:outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all">
                                 <p v-if="memberForm.errors.email" class="mt-2 text-[10px] font-bold text-rose-500 uppercase tracking-widest">{{ memberForm.errors.email }}</p>
                             </div>
                             <div>
-                                <label class="block text-[10px] font-black text-slate-900 dark:text-slate-400 uppercase tracking-widest mb-2 px-1">Initial Password</label>
+                                <label class="block text-[10px] font-black text-slate-900 dark:text-slate-300 uppercase tracking-widest mb-2 px-1">Initial Password</label>
                                 <input v-model="memberForm.password" type="password" required placeholder="Minimum 8 characters"
                                     class="w-full px-5 py-3.5 bg-slate-50/50 dark:bg-slate-950/50 border-2 border-slate-100 dark:border-slate-800/50 rounded-2xl text-sm font-bold text-slate-800 dark:text-white placeholder:text-slate-400 focus:outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all">
                                 <p v-if="memberForm.errors.password" class="mt-2 text-[10px] font-bold text-rose-500 uppercase tracking-widest">{{ memberForm.errors.password }}</p>
                             </div>
                             <div>
-                                <label class="block text-[10px] font-black text-slate-900 dark:text-slate-400 uppercase tracking-widest mb-2 px-1">Contact Terminal</label>
+                                <label class="block text-[10px] font-black text-slate-900 dark:text-slate-300 uppercase tracking-widest mb-2 px-1">Contact Terminal</label>
                                 <input v-model="memberForm.contact_number" type="text"
                                     class="w-full px-5 py-3.5 bg-slate-50/50 dark:bg-slate-950/50 border-2 border-slate-100 dark:border-slate-800/50 rounded-2xl text-sm font-bold text-slate-800 dark:text-white placeholder:text-slate-400 focus:outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all">
                             </div>

@@ -1,7 +1,9 @@
 <script setup>
-import { computed, ref, watch } from 'vue';
+import { computed, ref, watch, onMounted } from 'vue';
 import { useFullScreen } from '@/Composables/useFullScreen';
 import { Link, Head, usePage } from '@inertiajs/vue3';
+import AlertDialog from '@/Components/AlertDialog.vue';
+import { useAlert } from '@/composables/useAlert';
 
 defineProps({
     title: String,
@@ -13,6 +15,14 @@ defineProps({
 
 const page = usePage();
 const isMobileMenuOpen = ref(false);
+const alertDialogRef = ref(null);
+const { setAlertComponent } = useAlert();
+
+onMounted(() => {
+    if (alertDialogRef.value) {
+        setAlertComponent(alertDialogRef.value);
+    }
+});
 
 const isDark = ref(
     typeof window !== 'undefined'
@@ -151,5 +161,8 @@ const { isFullScreen, toggleFullScreen } = useFullScreen();
                 <slot />
             </div>
         </main>
+
+        <!-- Alert Dialog (Global) -->
+        <AlertDialog ref="alertDialogRef" />
     </div>
 </template>

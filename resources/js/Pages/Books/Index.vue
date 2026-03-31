@@ -1,7 +1,9 @@
 <script setup>
 import AppLayout from '@/Layouts/AppLayout.vue';
-import { Head, Link, useForm, router } from '@inertiajs/vue3';
-import { ref, watch } from 'vue';
+import PaginationControls from '@/Components/PaginationControls.vue';
+import { useForm, router } from '@inertiajs/vue3';
+import { computed, ref, watch } from 'vue';
+import { useAlert } from '@/composables/useAlert';
 
 const props = defineProps({
     books: Object,
@@ -14,6 +16,19 @@ const category_id = ref(props.filters?.category_id || '');
 const language = ref(props.filters?.language || '');
 const available = ref(props.filters?.available || 'false');
 const showAddModal = ref(false);
+
+const stats = computed(() => {
+    const rows = props.books?.data ?? [];
+
+    return {
+        visibleTitles: rows.length,
+        inStockTitles: rows.filter((book) => Number(book.available_quantity) > 0).length,
+        lowStockTitles: rows.filter((book) => Number(book.available_quantity) > 0 && Number(book.available_quantity) <= 2).length,
+        visibleCopies: rows.reduce((sum, book) => sum + Number(book.available_quantity || 0), 0),
+    };
+});
+
+const { confirm } = useAlert();
 
 const addForm = useForm({
     title: '',
@@ -60,8 +75,13 @@ const resetFilters = () => {
     router.get('/books', {}, { preserveState: false });
 };
 
-const deleteBook = (id) => {
-    if (confirm('Are you sure you want to delete this book?')) {
+const deleteBook = async (id) => {
+    const confirmed = await confirm('Are you sure you want to delete this book?', {
+        title: 'Delete Book',
+        type: 'error',
+        confirmText: 'Delete'
+    });
+    if (confirmed) {
         router.delete(`/books/${id}`);
     }
 }
@@ -71,54 +91,85 @@ const deleteBook = (id) => {
     <AppLayout title="Books Management">
         <template #header>Books Inventory</template>
 
-        <div class="mb-5 sm:mb-6 flex flex-col gap-4">
-            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
-                <div class="relative w-full sm:w-96 group">
-                    <svg class="absolute left-4 top-3.5 h-5 w-5 text-slate-400 group-focus-within:text-indigo-500 transition-colors" viewBox="0 0 20 20" fill="currentColor">
-                        <path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd"/>
-                    </svg>
-                    <input v-model="search" type="text" placeholder="Search by title, author, or ISBN…"
-                        class="w-full pl-11 pr-5 py-3 bg-white/50 dark:bg-slate-900/50 backdrop-blur-xl border-2 border-slate-100 dark:border-slate-800/50 rounded-2xl text-sm font-bold text-slate-800 dark:text-white placeholder:text-slate-400 focus:outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all">
+        <div class="space-y-5">
+            <section class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+                <div class="glass-card rounded-3xl p-5">
+                    <div class="text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-300">Visible titles</div>
+                    <div class="mt-2 text-3xl font-black text-slate-900 dark:text-white">{{ stats.visibleTitles }}</div>
                 </div>
-                <button @click="showAddModal = true"
-                    class="px-5 sm:px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl text-xs sm:text-sm font-black uppercase tracking-widest shadow-2xl shadow-indigo-500/20 hover:glow-indigo transition-all flex items-center justify-center gap-2 shrink-0 active:scale-95 w-full sm:w-auto">
-                    <svg class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd"/></svg>
-                    Add New Book
-                </button>
-            </div>
+                <div class="glass-card rounded-3xl p-5">
+                    <div class="text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-300">Titles in stock</div>
+                    <div class="mt-2 text-3xl font-black text-emerald-600 dark:text-emerald-300">{{ stats.inStockTitles }}</div>
+                </div>
+                <div class="glass-card rounded-3xl p-5">
+                    <div class="text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-300">Low-stock titles</div>
+                    <div class="mt-2 text-3xl font-black text-amber-600 dark:text-amber-300">{{ stats.lowStockTitles }}</div>
+                </div>
+                <div class="glass-card rounded-3xl p-5">
+                    <div class="text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-300">Visible copies</div>
+                    <div class="mt-2 text-3xl font-black text-indigo-600 dark:text-indigo-300">{{ stats.visibleCopies }}</div>
+                </div>
+            </section>
 
-            <!-- Filter Bar -->
-            <div class="flex flex-wrap items-center gap-3">
-                <select v-model="category_id" class="px-4 py-2 bg-white/30 dark:bg-slate-900/30 backdrop-blur-md border-2 border-slate-100 dark:border-slate-800/50 rounded-xl text-xs font-bold text-slate-800 dark:text-white focus:outline-none focus:border-indigo-500 transition-all">
-                    <option value="">All Categories</option>
-                    <option v-for="cat in categories" :key="cat.id" :value="cat.id">{{ cat.name }}</option>
-                </select>
+            <section class="glass-card rounded-3xl p-4 sm:p-5 lg:p-6 space-y-4">
+                <div class="flex flex-col xl:flex-row xl:items-center gap-4 justify-between">
+                    <div>
+                        <h3 class="text-xl font-black text-slate-900 dark:text-white tracking-tight">Catalog workspace</h3>
+                        <p class="text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-slate-300 mt-1">Filter, review stock, and register titles</p>
+                    </div>
+                    <button @click="showAddModal = true"
+                        class="px-5 sm:px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl text-xs sm:text-sm font-black uppercase tracking-widest shadow-2xl shadow-indigo-500/20 transition-all flex items-center justify-center gap-2 shrink-0 active:scale-95 w-full xl:w-auto">
+                        <svg class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd"/></svg>
+                        Add New Book
+                    </button>
+                </div>
 
-                <select v-model="language" class="px-4 py-2 bg-white/30 dark:bg-slate-900/30 backdrop-blur-md border-2 border-slate-100 dark:border-slate-800/50 rounded-xl text-xs font-bold text-slate-800 dark:text-white focus:outline-none focus:border-indigo-500 transition-all">
-                    <option value="">All Languages</option>
-                    <option value="English">English</option>
-                    <option value="Sinhala">Sinhala</option>
-                    <option value="Tamil">Tamil</option>
-                </select>
+                <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-[minmax(0,1.5fr)_repeat(2,minmax(0,0.8fr))_auto] gap-3 items-end">
+                    <div class="relative group">
+                        <label class="block text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-300 mb-2 px-1">Search catalog</label>
+                        <svg class="absolute left-4 top-[2.65rem] h-5 w-5 text-slate-400 group-focus-within:text-indigo-500 transition-colors" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd"/>
+                        </svg>
+                        <input v-model="search" type="text" placeholder="Title, author, or ISBN"
+                            class="w-full pl-11 pr-5 py-3 bg-white/60 dark:bg-slate-900/70 border-2 border-slate-100 dark:border-slate-700/70 rounded-2xl text-sm font-bold text-slate-800 dark:text-white placeholder:text-slate-400">
+                    </div>
 
-                <button @click="available = available === 'true' ? 'false' : 'true'" 
-                    class="px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-all flex items-center gap-2 border-2"
-                    :class="available === 'true' ? 'bg-emerald-500/10 border-emerald-500/50 text-emerald-600 dark:text-emerald-400' : 'bg-white/30 dark:bg-slate-900/30 border-slate-100 dark:border-slate-800/50 text-slate-400'">
-                    <div class="w-1.5 h-1.5 rounded-full" :class="available === 'true' ? 'bg-emerald-500 animate-pulse' : 'bg-slate-400'"></div>
-                    In Stock Only
-                </button>
+                    <div>
+                        <label class="block text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-300 mb-2 px-1">Category</label>
+                        <select v-model="category_id" class="w-full px-4 py-3 bg-white/60 dark:bg-slate-900/70 border-2 border-slate-100 dark:border-slate-700/70 rounded-2xl text-xs font-bold text-slate-800 dark:text-white">
+                            <option value="">All Categories</option>
+                            <option v-for="cat in categories" :key="cat.id" :value="cat.id">{{ cat.name }}</option>
+                        </select>
+                    </div>
 
-                <button v-if="search || category_id || language || available === 'true'" 
-                    @click="resetFilters"
-                    class="text-[10px] font-black uppercase tracking-widest text-rose-500 hover:text-rose-600 transition-colors ml-auto">
-                    Reset Filters
-                </button>
-            </div>
-        </div>
+                    <div>
+                        <label class="block text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-300 mb-2 px-1">Language</label>
+                        <select v-model="language" class="w-full px-4 py-3 bg-white/60 dark:bg-slate-900/70 border-2 border-slate-100 dark:border-slate-700/70 rounded-2xl text-xs font-bold text-slate-800 dark:text-white">
+                            <option value="">All Languages</option>
+                            <option value="English">English</option>
+                            <option value="Sinhala">Sinhala</option>
+                            <option value="Tamil">Tamil</option>
+                        </select>
+                    </div>
 
-        <div class="glass-card rounded-3xl overflow-hidden mb-8">
+                    <button @click="available = available === 'true' ? 'false' : 'true'"
+                        class="w-full px-4 py-3 rounded-2xl text-xs font-black uppercase tracking-widest transition-all flex items-center justify-center gap-2 border-2"
+                        :class="available === 'true' ? 'bg-emerald-500/10 border-emerald-500/50 text-emerald-600 dark:text-emerald-300' : 'bg-white/40 dark:bg-slate-900/50 border-slate-100 dark:border-slate-700/70 text-slate-500 dark:text-slate-300'">
+                        <div class="w-1.5 h-1.5 rounded-full" :class="available === 'true' ? 'bg-emerald-500 animate-pulse' : 'bg-slate-400'"></div>
+                        In Stock Only
+                    </button>
+
+                    <button v-if="search || category_id || language || available === 'true'"
+                        @click="resetFilters"
+                        class="px-4 py-3 rounded-2xl border border-rose-500/20 bg-rose-500/10 text-[10px] font-black uppercase tracking-widest text-rose-500 hover:bg-rose-500/15">
+                        Reset
+                    </button>
+                </div>
+            </section>
+
+            <section class="glass-card rounded-3xl overflow-hidden">
             <div class="overflow-x-auto">
-                <table class="w-full min-w-215 text-left border-collapse">
+                <table class="w-full min-w-[980px] text-left border-collapse">
                     <thead>
                         <tr class="bg-slate-50/50 dark:bg-slate-900/50">
                             <th class="px-4 sm:px-6 lg:px-8 py-4 text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest leading-none">Book Details</th>
@@ -129,12 +180,18 @@ const deleteBook = (id) => {
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-white/5 dark:divide-slate-800/30">
+                        <tr v-if="!books.data?.length">
+                            <td colspan="5" class="px-8 py-16 text-center">
+                                <div class="text-sm font-black text-slate-700 dark:text-slate-200">No books match the current filters</div>
+                                <div class="text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-slate-300 mt-2">Try widening your search or add a new title</div>
+                            </td>
+                        </tr>
                         <tr v-for="book in books.data" :key="book.id" class="group hover:bg-white/40 dark:hover:bg-white/5 transition-colors">
                             <td class="px-4 sm:px-6 lg:px-8 py-5">
                                 <div class="text-sm font-black text-slate-800 dark:text-slate-100 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">{{ book.title }}</div>
-                                <div class="text-[10px] font-bold text-slate-600 dark:text-slate-400 uppercase tracking-tighter mt-0.5">{{ book.author }}</div>
+                                <div class="text-[10px] font-bold text-slate-600 dark:text-slate-300 uppercase tracking-tighter mt-0.5">{{ book.author }}</div>
                             </td>
-                            <td class="px-4 sm:px-6 lg:px-8 py-5 text-xs text-slate-700 dark:text-slate-400 font-mono tracking-tighter">{{ book.isbn || 'NO ISBN' }}</td>
+                            <td class="px-4 sm:px-6 lg:px-8 py-5 text-xs text-slate-700 dark:text-slate-300 font-mono tracking-tighter">{{ book.isbn || 'NO ISBN' }}</td>
                             <td class="px-4 sm:px-6 lg:px-8 py-5">
                                 <span class="px-3 py-1 bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 rounded-lg text-[10px] font-black uppercase tracking-widest border border-indigo-500/20">{{ book.category.name }}</span>
                             </td>
@@ -152,7 +209,7 @@ const deleteBook = (id) => {
                             </td>
                             <td class="px-4 sm:px-6 lg:px-8 py-5 text-right">
                                 <div class="flex justify-end space-x-2">
-                                    <button class="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-500/10 dark:hover:text-indigo-400 rounded-xl transition-all hover:scale-110 active:scale-90">
+                                    <button class="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-500/10 dark:hover:text-indigo-400 rounded-xl transition-all hover:scale-110 active:scale-90" title="Edit UI not yet connected">
                                         <svg class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z"/></svg>
                                     </button>
                                     <button @click="deleteBook(book.id)" class="p-2 text-slate-400 hover:text-rose-500 hover:bg-rose-500/10 dark:hover:text-rose-400 rounded-xl transition-all hover:scale-110 active:scale-90">
@@ -166,13 +223,9 @@ const deleteBook = (id) => {
             </div>
             <div class="px-4 sm:px-6 lg:px-8 py-4 bg-slate-50/50 dark:bg-slate-900/50 border-t border-white/5 dark:border-slate-800/30 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
                 <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Displaying {{ books.from }} – {{ books.to }} of {{ books.total }} Records</span>
-                <!-- Simplified Pagination placeholder for now -->
-                <div class="flex gap-2">
-                    <button class="px-3 py-1.5 glass-card text-[10px] font-black text-slate-400 uppercase tracking-widest rounded-lg hover:text-indigo-500 transition-colors cursor-not-allowed">Prev</button>
-                    <button class="px-3 py-1.5 bg-indigo-600 text-[10px] font-black text-white uppercase tracking-widest rounded-lg glow-indigo transition-all">1</button>
-                    <button class="px-3 py-1.5 glass-card text-[10px] font-black text-slate-400 uppercase tracking-widest rounded-lg hover:text-indigo-500 transition-colors cursor-not-allowed">Next</button>
-                </div>
+                <PaginationControls :links="books.links || []" />
             </div>
+            </section>
         </div>
 
         <!-- Add Book Modal -->
