@@ -1,5 +1,5 @@
 <script setup>
-import { computed, ref, watch, onMounted } from 'vue';
+import { computed, ref, watch, onMounted, onUnmounted } from 'vue';
 import { useFullScreen } from '@/Composables/useFullScreen';
 import { Link, Head, usePage } from '@inertiajs/vue3';
 import AlertDialog from '@/Components/AlertDialog.vue';
@@ -17,10 +17,39 @@ const page = usePage();
 const isMobileMenuOpen = ref(false);
 const alertDialogRef = ref(null);
 const { setAlertComponent } = useAlert();
+const now = ref(new Date());
+let clockTimer = null;
+
+const formattedDate = computed(() => {
+    return now.value.toLocaleDateString(undefined, {
+        weekday: 'short',
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+    });
+});
+
+const formattedTime = computed(() => {
+    return now.value.toLocaleTimeString(undefined, {
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+    });
+});
 
 onMounted(() => {
     if (alertDialogRef.value) {
         setAlertComponent(alertDialogRef.value);
+    }
+
+    clockTimer = window.setInterval(() => {
+        now.value = new Date();
+    }, 1000);
+});
+
+onUnmounted(() => {
+    if (clockTimer) {
+        window.clearInterval(clockTimer);
     }
 });
 
@@ -135,6 +164,10 @@ const { isFullScreen, toggleFullScreen } = useFullScreen();
                 </div>
 
                 <div class="flex items-center gap-2">
+                    <div class="hidden lg:flex flex-col items-end rounded-xl border border-slate-200/50 dark:border-slate-700/40 bg-slate-100/60 dark:bg-slate-800/60 px-3 py-1.5 leading-tight">
+                        <div class="text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-300">{{ formattedDate }}</div>
+                        <div class="text-xs font-bold text-slate-700 dark:text-slate-100">{{ formattedTime }}</div>
+                    </div>
                     <button @click="toggleFullScreen"
                         class="p-1.5 sm:p-2 rounded-lg bg-slate-100/60 dark:bg-slate-800/60 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition border border-slate-200/50 dark:border-slate-700/40 shrink-0">
                         <svg v-if="!isFullScreen" class="h-4 w-4 sm:h-5 sm:w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
