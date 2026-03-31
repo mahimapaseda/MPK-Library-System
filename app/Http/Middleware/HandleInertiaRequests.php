@@ -3,7 +3,10 @@
 namespace App\Http\Middleware;
 
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Schema;
 use Inertia\Middleware;
+use Throwable;
 
 class HandleInertiaRequests extends Middleware
 {
@@ -36,6 +39,17 @@ class HandleInertiaRequests extends Middleware
     public function share(Request $request): array
     {
         $user = $request->user();
+        $settings = Cache::remember('shared_settings', 60, function () {
+            try {
+                if (! Schema::hasTable('settings')) {
+                    return collect();
+                }
+
+                return \App\Models\Setting::query()->pluck('value', 'key');
+            } catch (Throwable) {
+                return collect();
+            }
+        });
 
         return [
             ...parent::share($request),
@@ -48,7 +62,7 @@ class HandleInertiaRequests extends Middleware
                     'can_manage_settings' => $user ? $user->role === 'librarian' : false,
                 ],
             ],
-            'settings' => \App\Models\Setting::all()->pluck('value', 'key'),
+            'settings' => $settings,
             'flash' => [
                 'success' => $request->session()->get('success'),
                 'error' => $request->session()->get('error'),

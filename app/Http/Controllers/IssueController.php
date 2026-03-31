@@ -8,6 +8,7 @@ use App\Models\Book;
 use App\Models\Member;
 use App\Models\BookIssue;
 use App\Models\Fine;
+use App\Models\Setting;
 use Inertia\Inertia;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Cache;
@@ -65,7 +66,24 @@ class IssueController extends Controller
         $issued = 0;
 
         DB::transaction(function () use ($validated, &$errors, &$issued) {
+            $maxBooksPerMember = (int) (Setting::where('key', 'max_books_per_member')->first()?->value ?? 5);
+            $activeIssueCount = BookIssue::where('member_id', $validated['member_id'])
+                ->where('status', 'issued')
+                ->count();
+
+            $remainingSlots = max(0, $maxBooksPerMember - $activeIssueCount);
+
+            if ($remainingSlots === 0) {
+                $errors[] = "Member has reached the maximum active issues ({$maxBooksPerMember}).";
+                return;
+            }
+
             foreach ($validated['books'] as $item) {
+                if ($issued >= $remainingSlots) {
+                    $errors[] = "Maximum active issues limit reached ({$maxBooksPerMember}).";
+                    continue;
+                }
+
                 $book = Book::lockForUpdate()->find($item['book_id']);
 
                 if ($book->available_quantity <= 0) {
@@ -160,6 +178,16 @@ class IssueController extends Controller
 
         return DB::transaction(function () use ($validated) {
             $book = Book::lockForUpdate()->find($validated['book_id']);
+            $maxBooksPerMember = (int) (Setting::where('key', 'max_books_per_member')->first()?->value ?? 5);
+            $activeIssueCount = BookIssue::where('member_id', $validated['member_id'])
+                ->where('status', 'issued')
+                ->count();
+
+            if ($activeIssueCount >= $maxBooksPerMember) {
+                return redirect()->back()->withErrors([
+                    'member_id' => "This member has reached the maximum active issues ({$maxBooksPerMember}).",
+                ]);
+            }
 
             if ($book->available_quantity <= 0) {
                 return redirect()->back()->withErrors(['book_id' => 'This book is not currently available.']);

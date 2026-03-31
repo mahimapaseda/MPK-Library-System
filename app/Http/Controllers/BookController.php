@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\Book;
+use App\Models\BookIssue;
 use App\Models\Category;
 use Inertia\Inertia;
 
@@ -72,9 +73,17 @@ class BookController extends Controller
             'location_rack' => 'nullable|string',
         ]);
 
-        // Adjust available quantity based on total change
-        $diff = $validated['total_quantity'] - $book->total_quantity;
-        $validated['available_quantity'] = max(0, $book->available_quantity + $diff);
+        $activeIssuedCount = BookIssue::where('book_id', $book->id)
+            ->where('status', 'issued')
+            ->count();
+
+        if ($validated['total_quantity'] < $activeIssuedCount) {
+            return redirect()->back()->withErrors([
+                'total_quantity' => "Total quantity cannot be less than active issued copies ({$activeIssuedCount}).",
+            ]);
+        }
+
+        $validated['available_quantity'] = max(0, $validated['total_quantity'] - $activeIssuedCount);
 
         $book->update($validated);
 
