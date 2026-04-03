@@ -97,8 +97,9 @@ const submit = () => {
 
 <style scoped>
 .glass-card {
-    backdrop-filter: blur(64px);
-    background: linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.02) 100%);
+    -webkit-backdrop-filter: blur(32px) saturate(160%);
+    backdrop-filter: blur(32px) saturate(160%);
+    background: linear-gradient(135deg, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0.08) 100%);
 }
 .glow-indigo {
     box-shadow: 0 0 50px -10px rgba(99,102,241,0.5);

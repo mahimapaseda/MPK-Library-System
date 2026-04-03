@@ -21,7 +21,7 @@ const submit = () => {
         <div class="absolute -top-40 -left-40 w-96 h-96 bg-indigo-400/20 rounded-full blur-3xl pointer-events-none"></div>
         <div class="absolute -bottom-40 -right-40 w-96 h-96 bg-violet-400/20 rounded-full blur-3xl pointer-events-none"></div>
 
-        <div class="w-full max-w-sm mx-4 bg-white/10 dark:bg-slate-900/40 backdrop-blur-2xl rounded-3xl shadow-2xl shadow-indigo-500/10 dark:shadow-none border border-white/20 dark:border-slate-700/40 p-8">
+        <div class="glass-card w-full max-w-sm mx-4 rounded-3xl shadow-2xl shadow-indigo-500/15 dark:shadow-none p-8 relative z-10">
             <!-- Logo mark -->
             <div class="mb-7 text-center">
                 <div class="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-linear-to-br from-indigo-500 to-violet-600 shadow-lg shadow-indigo-500/30 mb-4">

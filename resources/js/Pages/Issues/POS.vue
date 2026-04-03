@@ -238,7 +238,7 @@ const typeBadgeClass = (type) => ({
                             Default due {{ defaultDueDate }}
                         </span>
                     </div>
-                    <div class="text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-slate-300">
+                    <div class="text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-slate-200">
                         Shortcut: / books, M member
                     </div>
                 </div>
@@ -279,7 +279,7 @@ const typeBadgeClass = (type) => ({
                                     <div class="h-9 w-9 rounded-full bg-indigo-100 dark:bg-slate-800 group-hover:bg-white/20 text-indigo-600 dark:text-indigo-300 group-hover:text-white flex items-center justify-center font-black text-sm">{{ m.name[0] }}</div>
                                     <div class="min-w-0 flex-1">
                                         <div class="text-sm font-black text-slate-800 dark:text-white group-hover:text-white truncate">{{ m.name }}</div>
-                                        <div class="text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-slate-300 group-hover:text-white/80">{{ m.member_id }} · {{ m.type }}</div>
+                                        <div class="text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-slate-200 group-hover:text-white/80">{{ m.member_id }} · {{ m.type }}</div>
                                     </div>
                                 </button>
                             </div>
@@ -294,7 +294,7 @@ const typeBadgeClass = (type) => ({
                             <span class="px-2 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest" :class="typeBadgeClass(selectedMember.type)">{{ selectedMember.type }}</span>
                         </div>
 
-                        <div v-else class="mt-4 flex-1 min-h-30 rounded-2xl border border-dashed border-slate-300 dark:border-slate-700/70 flex items-center justify-center text-[11px] font-bold uppercase tracking-widest text-slate-400 dark:text-slate-400">
+                        <div v-else class="mt-4 flex-1 min-h-30 rounded-2xl border border-dashed border-slate-300 dark:border-slate-600/80 bg-transparent dark:bg-slate-950/20 flex items-center justify-center text-[11px] font-bold uppercase tracking-widest text-slate-500 dark:text-slate-200">
                             Select a member to continue
                         </div>
                     </div>
@@ -325,7 +325,7 @@ const typeBadgeClass = (type) => ({
                         </div>
 
                         <div class="flex-1 overflow-y-auto space-y-3 pr-1">
-                            <div v-if="!bookLoading && bookResults.length === 0" class="h-full min-h-30 rounded-2xl border border-dashed border-slate-300 dark:border-slate-700/70 flex items-center justify-center text-[11px] font-bold uppercase tracking-widest text-slate-400 dark:text-slate-400">
+                            <div v-if="!bookLoading && bookResults.length === 0" class="h-full min-h-30 rounded-2xl border border-dashed border-slate-300 dark:border-slate-600/80 bg-transparent dark:bg-slate-950/20 flex items-center justify-center text-[11px] font-bold uppercase tracking-widest text-slate-500 dark:text-slate-200">
                                 Search to load available books
                             </div>
 
@@ -337,10 +337,10 @@ const typeBadgeClass = (type) => ({
                             >
                                 <div class="min-w-0">
                                     <div class="text-sm font-black truncate" :class="isInCart(book.id) ? 'text-white' : 'text-slate-800 dark:text-slate-100'">{{ book.title }}</div>
-                                    <div class="text-[10px] font-bold uppercase tracking-widest" :class="isInCart(book.id) ? 'text-white/75' : 'text-slate-500 dark:text-slate-300'">{{ book.author }}</div>
+                                    <div class="text-[10px] font-bold uppercase tracking-widest" :class="isInCart(book.id) ? 'text-white/75' : 'text-slate-500 dark:text-slate-200'">{{ book.author }}</div>
                                 </div>
                                 <div class="flex items-center gap-2 shrink-0">
-                                    <span class="px-2 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest" :class="isInCart(book.id) ? 'bg-white/20 text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300'">
+                                    <span class="px-2 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest" :class="isInCart(book.id) ? 'bg-white/20 text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-200'">
                                         {{ book.available_quantity }}
                                     </span>
                                     <button v-if="!isInCart(book.id)" @click="addToCart(book)" class="h-8 w-8 rounded-xl bg-indigo-600 text-white flex items-center justify-center hover:scale-105 active:scale-95">
@@ -363,7 +363,7 @@ const typeBadgeClass = (type) => ({
                         <button v-if="cart.length" @click="clearCart" class="text-[10px] font-black uppercase tracking-widest px-2.5 py-1.5 rounded-lg bg-rose-500/10 text-rose-600 dark:text-rose-300 hover:bg-rose-500/20">Clear</button>
                     </div>
 
-                    <div v-if="cart.length === 0" class="flex-1 min-h-45 rounded-2xl border border-dashed border-slate-300 dark:border-slate-700/70 flex items-center justify-center text-[11px] font-bold uppercase tracking-widest text-slate-400 dark:text-slate-400">
+                    <div v-if="cart.length === 0" class="flex-1 min-h-45 rounded-2xl border border-dashed border-slate-300 dark:border-slate-600/80 bg-transparent dark:bg-slate-950/20 flex items-center justify-center text-[11px] font-bold uppercase tracking-widest text-slate-500 dark:text-slate-200">
                         Cart is empty
                     </div>
 
@@ -372,7 +372,7 @@ const typeBadgeClass = (type) => ({
                             <div class="flex items-start gap-2">
                                 <div class="min-w-0 flex-1">
                                     <div class="text-sm font-black text-slate-800 dark:text-slate-100 truncate">{{ item.title }}</div>
-                                    <div class="text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-slate-300">{{ item.author }}</div>
+                                    <div class="text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-slate-200">{{ item.author }}</div>
                                 </div>
                                 <button @click="removeFromCart(item.book_id)" class="h-7 w-7 rounded-lg text-slate-400 hover:text-rose-500 hover:bg-rose-500/10">
                                     <svg class="h-4 w-4 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M6 18L18 6M6 6l12 12"/></svg>
@@ -380,7 +380,7 @@ const typeBadgeClass = (type) => ({
                             </div>
 
                             <div class="mt-3 flex items-center gap-2">
-                                <span class="text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-300">Due</span>
+                                <span class="text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-200">Due</span>
                                 <input v-model="item.due_date" type="date" class="flex-1 px-2 py-1.5 rounded-lg bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-700 text-xs font-bold text-slate-700 dark:text-slate-200" />
                             </div>
                         </div>

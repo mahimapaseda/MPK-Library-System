@@ -216,14 +216,14 @@ const deleteMember = async (id) => {
         </div>
 
         <transition enter-active-class="transition duration-300 ease-out" enter-from-class="opacity-0 scale-95" enter-to-class="opacity-100 scale-100" leave-active-class="transition duration-200 ease-in" leave-from-class="opacity-100 scale-100" leave-to-class="opacity-0 scale-95">
-            <div v-if="showAddModal" class="fixed inset-0 bg-slate-900/20 dark:bg-black/60 backdrop-blur-md flex items-center justify-center p-4 z-50">
-                <div class="bg-white/80 dark:bg-slate-900/40 backdrop-blur-2xl rounded-4xl shadow-2xl border-2 border-white/50 dark:border-slate-700/30 w-full max-w-lg overflow-hidden">
-                    <div class="px-8 py-6 border-b border-white/10 dark:border-slate-800/50 flex items-center justify-between">
+            <div v-if="showAddModal" class="fixed inset-0 bg-white/24 dark:bg-black/60 backdrop-blur-md flex items-center justify-center p-4 z-50">
+                <div class="w-full max-w-lg overflow-hidden rounded-4xl border border-white/70 bg-white/78 shadow-[0_24px_80px_rgba(15,23,42,0.22)] backdrop-blur-2xl dark:border-slate-700/30 dark:bg-slate-900/40">
+                    <div class="px-8 py-6 border-b border-slate-200/70 dark:border-slate-800/50 flex items-center justify-between">
                         <div>
                             <h3 class="text-xl font-black text-slate-900 dark:text-white tracking-tight">Onboard New Member</h3>
                             <p class="text-[10px] font-bold text-slate-600 dark:text-slate-400 uppercase tracking-widest mt-0.5">Member Database Management</p>
                         </div>
-                        <button @click="showAddModal = false" class="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-white transition-all hover:rotate-90">
+                        <button @click="showAddModal = false" class="p-2 text-slate-500 hover:text-slate-700 dark:hover:text-white transition-all hover:rotate-90">
                             <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
                         </button>
                     </div>
@@ -232,13 +232,13 @@ const deleteMember = async (id) => {
                             <div>
                                 <label class="block text-[10px] font-black text-slate-900 dark:text-slate-300 uppercase tracking-widest mb-2 px-1">Member Identification</label>
                                 <input v-model="memberForm.member_id" type="text" required placeholder="e.g. STU001"
-                                    class="w-full px-5 py-3.5 bg-slate-50/50 dark:bg-slate-950/50 border-2 border-slate-100 dark:border-slate-800/50 rounded-2xl text-sm font-bold text-slate-800 dark:text-white placeholder:text-slate-400 focus:outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all">
+                                    class="w-full px-5 py-3.5 bg-white/72 dark:bg-slate-950/50 border-2 border-slate-300/70 dark:border-slate-800/50 rounded-2xl text-sm font-bold text-slate-900 dark:text-white placeholder:text-slate-500 focus:outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all">
                                 <p v-if="memberForm.errors.member_id" class="mt-2 text-[10px] font-bold text-rose-500 uppercase tracking-widest">{{ memberForm.errors.member_id }}</p>
                             </div>
                             <div>
                                 <label class="block text-[10px] font-black text-slate-900 dark:text-slate-300 uppercase tracking-widest mb-2 px-1">Account Type</label>
                                 <select v-model="memberForm.type" required
-                                    class="w-full px-5 py-3.5 bg-slate-50/50 dark:bg-slate-950/50 border-2 border-slate-100 dark:border-slate-800/50 rounded-2xl text-sm font-bold text-slate-800 dark:text-white focus:outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all">
+                                    class="w-full px-5 py-3.5 bg-white/72 dark:bg-slate-950/50 border-2 border-slate-300/70 dark:border-slate-800/50 rounded-2xl text-sm font-bold text-slate-900 dark:text-white focus:outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all">
                                     <option value="student">Student</option>
                                     <option value="teacher">Teacher</option>
                                     <option value="staff">Staff</option>
@@ -247,19 +247,19 @@ const deleteMember = async (id) => {
                             <div class="md:col-span-2">
                                 <label class="block text-[10px] font-black text-slate-900 dark:text-slate-300 uppercase tracking-widest mb-2 px-1">Institutional Email</label>
                                 <input v-model="memberForm.email" type="email" required placeholder="name@institution.com"
-                                    class="w-full px-5 py-3.5 bg-slate-50/50 dark:bg-slate-950/50 border-2 border-slate-100 dark:border-slate-800/50 rounded-2xl text-sm font-bold text-slate-800 dark:text-white placeholder:text-slate-400 focus:outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all">
+                                    class="w-full px-5 py-3.5 bg-white/72 dark:bg-slate-950/50 border-2 border-slate-300/70 dark:border-slate-800/50 rounded-2xl text-sm font-bold text-slate-900 dark:text-white placeholder:text-slate-500 focus:outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all">
                                 <p v-if="memberForm.errors.email" class="mt-2 text-[10px] font-bold text-rose-500 uppercase tracking-widest">{{ memberForm.errors.email }}</p>
                             </div>
                             <div>
                                 <label class="block text-[10px] font-black text-slate-900 dark:text-slate-300 uppercase tracking-widest mb-2 px-1">Initial Password</label>
                                 <input v-model="memberForm.password" type="password" required placeholder="Minimum 8 characters"
-                                    class="w-full px-5 py-3.5 bg-slate-50/50 dark:bg-slate-950/50 border-2 border-slate-100 dark:border-slate-800/50 rounded-2xl text-sm font-bold text-slate-800 dark:text-white placeholder:text-slate-400 focus:outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all">
+                                    class="w-full px-5 py-3.5 bg-white/72 dark:bg-slate-950/50 border-2 border-slate-300/70 dark:border-slate-800/50 rounded-2xl text-sm font-bold text-slate-900 dark:text-white placeholder:text-slate-500 focus:outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all">
                                 <p v-if="memberForm.errors.password" class="mt-2 text-[10px] font-bold text-rose-500 uppercase tracking-widest">{{ memberForm.errors.password }}</p>
                             </div>
                             <div>
                                 <label class="block text-[10px] font-black text-slate-900 dark:text-slate-300 uppercase tracking-widest mb-2 px-1">Contact Terminal</label>
                                 <input v-model="memberForm.contact_number" type="text"
-                                    class="w-full px-5 py-3.5 bg-slate-50/50 dark:bg-slate-950/50 border-2 border-slate-100 dark:border-slate-800/50 rounded-2xl text-sm font-bold text-slate-800 dark:text-white placeholder:text-slate-400 focus:outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all">
+                                    class="w-full px-5 py-3.5 bg-white/72 dark:bg-slate-950/50 border-2 border-slate-300/70 dark:border-slate-800/50 rounded-2xl text-sm font-bold text-slate-900 dark:text-white placeholder:text-slate-500 focus:outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all">
                             </div>
                         </div>
                         <div class="flex justify-end gap-3 pt-4">
