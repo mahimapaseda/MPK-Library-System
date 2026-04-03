@@ -196,7 +196,7 @@ const typeBadgeClass = (type) => ({
 <template>
     <AppLayout title="Checkout POS">
         <template #header>
-            <div class="w-full flex items-center justify-between gap-4">
+            <div class="w-full flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                 <div class="flex items-center gap-3 min-w-0">
                     <Link href="/issues" class="h-8 w-8 rounded-xl bg-white/60 dark:bg-slate-800/80 border border-slate-200/70 dark:border-slate-700/70 text-slate-500 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-300 transition-all flex items-center justify-center">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
@@ -210,7 +210,7 @@ const typeBadgeClass = (type) => ({
                 </div>
 
                 <button @click="scanMode = !scanMode"
-                    class="flex items-center gap-2 px-4 py-2 rounded-2xl border transition-all duration-300 text-[10px] font-black uppercase tracking-widest"
+                    class="flex items-center justify-center gap-2 px-4 py-2 rounded-2xl border transition-all duration-300 text-[10px] font-black uppercase tracking-widest w-full sm:w-auto"
                     :class="scanMode ? 'bg-indigo-600 border-indigo-500 text-white shadow-lg shadow-indigo-500/30' : 'bg-white/60 dark:bg-slate-800/80 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300'">
                     <span class="h-2 w-2 rounded-full" :class="scanMode ? 'bg-white animate-pulse' : 'bg-slate-400'" />
                     {{ scanMode ? 'Scan Mode' : 'Manual Mode' }}
@@ -226,7 +226,7 @@ const typeBadgeClass = (type) => ({
             <span class="font-bold">{{ $page.props.flash.success }}</span>
         </div>
 
-        <div class="grid grid-cols-12 gap-4 lg:gap-6 min-h-[calc(100vh-12.5rem)]">
+        <div class="grid grid-cols-12 gap-4 lg:gap-6 min-h-0">
             <section class="col-span-12 lg:col-span-8 grid grid-rows-[auto_1fr] gap-4 lg:gap-6 min-h-0">
                 <div class="glass-card rounded-3xl p-4 lg:p-5 flex flex-wrap items-center gap-3 justify-between">
                     <div class="flex items-center gap-2 flex-wrap">

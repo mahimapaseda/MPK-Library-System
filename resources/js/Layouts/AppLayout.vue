@@ -55,7 +55,7 @@ onUnmounted(() => {
 
 const isDark = ref(
     typeof window !== 'undefined'
-        ? localStorage.getItem('theme') === 'dark' || (!localStorage.getItem('theme') && window.matchMedia('(prefers-color-scheme: dark)').matches)
+    ? localStorage.getItem('theme') === 'dark'
         : false
 );
 
@@ -125,7 +125,7 @@ const { isFullScreen, toggleFullScreen } = useFullScreen();
         </aside>
 
         <!-- Mobile & Tablet Drawer -->
-        <aside class="fixed top-0 left-0 h-full w-[86vw] max-w-xs glass-ghost rounded-r-3xl z-40 transform transition-transform duration-300 xl:hidden"
+        <aside class="fixed top-0 left-0 h-full w-[86vw] max-w-xs glass-ghost rounded-r-3xl z-40 transform transition-transform duration-300 xl:hidden flex flex-col"
             :class="isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'">
             <div class="p-6 border-b border-white/10 dark:border-slate-800/50 flex items-center justify-between">
                 <div class="text-lg font-black tracking-tight bg-linear-to-br from-indigo-600 to-indigo-400 bg-clip-text text-transparent">
