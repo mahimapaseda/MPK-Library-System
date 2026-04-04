@@ -187,10 +187,10 @@ const deleteMember = async (id) => {
                     </div>
 
                     <div class="flex justify-end gap-2">
-                        <button class="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-500/10 dark:hover:text-indigo-400 rounded-xl transition-all" title="Edit UI not yet connected">
+                        <button class="p-2 bg-white/80 dark:bg-slate-800/60 border border-slate-300/70 dark:border-slate-700/50 text-slate-700 dark:text-slate-300 hover:text-indigo-600 hover:bg-indigo-500/10 dark:hover:text-indigo-300 rounded-xl transition-all" title="Edit UI not yet connected">
                             <svg class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z"/></svg>
                         </button>
-                        <button @click="deleteMember(member.id)" class="p-2 text-slate-400 hover:text-rose-500 hover:bg-rose-500/10 dark:hover:text-rose-400 rounded-xl transition-all">
+                        <button @click="deleteMember(member.id)" class="p-2 bg-white/80 dark:bg-slate-800/60 border border-slate-300/70 dark:border-slate-700/50 text-slate-700 dark:text-slate-300 hover:text-rose-500 hover:bg-rose-500/10 dark:hover:text-rose-300 rounded-xl transition-all">
                             <svg class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd"/></svg>
                         </button>
                     </div>
@@ -239,10 +239,10 @@ const deleteMember = async (id) => {
                             <td class="px-8 py-5 text-xs font-bold text-slate-800 dark:text-slate-300 tracking-tighter">{{ member.contact_number || 'NO CONTACT' }}</td>
                             <td class="px-8 py-5 text-right">
                                 <div class="flex justify-end space-x-2">
-                                    <button class="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-500/10 dark:hover:text-indigo-400 rounded-xl transition-all hover:scale-110 active:scale-90" title="Edit UI not yet connected">
+                                    <button class="p-2 bg-white/80 dark:bg-slate-800/60 border border-slate-300/70 dark:border-slate-700/50 text-slate-700 dark:text-slate-300 hover:text-indigo-600 hover:bg-indigo-500/10 dark:hover:text-indigo-300 rounded-xl transition-all hover:scale-110 active:scale-90" title="Edit UI not yet connected">
                                         <svg class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z"/></svg>
                                     </button>
-                                    <button @click="deleteMember(member.id)" class="p-2 text-slate-400 hover:text-rose-500 hover:bg-rose-500/10 dark:hover:text-rose-400 rounded-xl transition-all hover:scale-110 active:scale-90">
+                                    <button @click="deleteMember(member.id)" class="p-2 bg-white/80 dark:bg-slate-800/60 border border-slate-300/70 dark:border-slate-700/50 text-slate-700 dark:text-slate-300 hover:text-rose-500 hover:bg-rose-500/10 dark:hover:text-rose-300 rounded-xl transition-all hover:scale-110 active:scale-90">
                                         <svg class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd"/></svg>
                                     </button>
                                 </div>

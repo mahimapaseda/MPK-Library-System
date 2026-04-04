@@ -3,9 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Models\Setting;
+use App\Support\SettingCache;
 use Inertia\Inertia;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Cache;
 
 class SettingController extends Controller
 {
@@ -26,7 +26,7 @@ class SettingController extends Controller
             Setting::updateOrCreate(['key' => $key], ['value' => $value]);
         }
 
-        Cache::forget('shared_settings');
+        SettingCache::forget();
 
         return redirect()->back()->with('success', 'Settings updated successfully.');
     }

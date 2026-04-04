@@ -10,6 +10,7 @@ use App\Models\BookIssue;
 use App\Models\Fine;
 use App\Models\Category;
 use App\Services\AiInsightsService;
+use Illuminate\Support\Facades\Cache;
 use Inertia\Inertia;
 
 class DashboardController extends Controller
@@ -29,13 +30,17 @@ class DashboardController extends Controller
             ->take(5)
             ->get();
 
-        return Inertia::render('Dashboard', [
-            'stats' => [
+        $stats = Cache::remember('dashboard_stats', 300, function () {
+            return [
                 'total_books' => Book::count(),
                 'total_members' => Member::count(),
                 'active_issues' => BookIssue::where('status', 'issued')->count(),
                 'pending_fines' => Fine::where('status', 'unpaid')->sum('amount'),
-            ],
+            ];
+        });
+
+        return Inertia::render('Dashboard', [
+            'stats' => $stats,
             'ai_insights' => $insightsService->buildDashboardInsights(),
             'recent_issues' => BookIssue::with(['book', 'member'])
                 ->latest()

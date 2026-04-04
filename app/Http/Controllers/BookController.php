@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use App\Models\Book;
 use App\Models\BookIssue;
 use App\Models\Category;
+use Illuminate\Support\Facades\Cache;
 use Inertia\Inertia;
 
 class BookController extends Controller
@@ -57,6 +58,7 @@ class BookController extends Controller
         $validated['available_quantity'] = $validated['total_quantity'];
 
         Book::create($validated);
+        $this->forgetAnalyticsCaches();
 
         return redirect()->back()->with('success', 'Book added successfully!');
     }
@@ -86,6 +88,7 @@ class BookController extends Controller
         $validated['available_quantity'] = max(0, $validated['total_quantity'] - $activeIssuedCount);
 
         $book->update($validated);
+        $this->forgetAnalyticsCaches();
 
         return redirect()->back()->with('success', 'Book updated successfully!');
     }
@@ -93,6 +96,14 @@ class BookController extends Controller
     public function destroy(Book $book)
     {
         $book->delete();
+        $this->forgetAnalyticsCaches();
         return redirect()->back()->with('success', 'Book deleted successfully!');
+    }
+
+    private function forgetAnalyticsCaches(): void
+    {
+        Cache::forget('dashboard_stats');
+        Cache::forget('reports.analytics');
+        Cache::forget('library_insights');
     }
 }

@@ -4,14 +4,27 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\Category;
+use Illuminate\Support\Facades\Cache;
 use Inertia\Inertia;
 
 class CategoryController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
+        $categories = Category::query()
+            ->when($request->filled('search'), function ($query) use ($request) {
+                $search = $request->string('search')->toString();
+                $query->where(function ($q) use ($search) {
+                    $q->where('name', 'like', "%{$search}%")
+                        ->orWhere('description', 'like', "%{$search}%");
+                });
+            })
+            ->orderBy('name')
+            ->get();
+
         return Inertia::render('Categories/Index', [
-            'categories' => Category::all()
+            'categories' => $categories,
+            'filters' => $request->only(['search']),
         ]);
     }
 
@@ -23,6 +36,7 @@ class CategoryController extends Controller
         ]);
 
         Category::create($validated);
+        Cache::forget('reports.analytics');
 
         return redirect()->back()->with('success', 'Category created successfully!');
     }
@@ -34,6 +48,7 @@ class CategoryController extends Controller
         }
 
         $category->delete();
+        Cache::forget('reports.analytics');
         return redirect()->back()->with('success', 'Category deleted successfully!');
     }
 }

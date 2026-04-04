@@ -2,13 +2,13 @@
 
 namespace App\Http\Controllers;
 
+use App\Support\SettingCache;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use App\Models\Book;
 use App\Models\Member;
 use App\Models\BookIssue;
 use App\Models\Fine;
-use App\Models\Setting;
 use Inertia\Inertia;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Cache;
@@ -17,8 +17,8 @@ class IssueController extends Controller
 {
     public function pos()
     {
-        $defaultLoanDays = (int) (\App\Models\Setting::where('key', 'loan_duration_days')->first()?->value ?? 14);
-        $maxBooksPerMember = (int) (\App\Models\Setting::where('key', 'max_books_per_member')->first()?->value ?? 5);
+        $defaultLoanDays = (int) SettingCache::get('loan_duration_days', 14);
+        $maxBooksPerMember = (int) SettingCache::get('max_books_per_member', 5);
 
         return Inertia::render('Issues/POS', [
             'defaultLoanDays' => $defaultLoanDays,
@@ -69,9 +69,9 @@ class IssueController extends Controller
 
         $errors = [];
         $issued = 0;
+        $maxBooksPerMember = (int) SettingCache::get('max_books_per_member', 5);
 
-        DB::transaction(function () use ($validated, &$errors, &$issued) {
-            $maxBooksPerMember = (int) (Setting::where('key', 'max_books_per_member')->first()?->value ?? 5);
+        DB::transaction(function () use ($validated, $maxBooksPerMember, &$errors, &$issued) {
             $activeIssueCount = BookIssue::where('member_id', $validated['member_id'])
                 ->where('status', 'issued')
                 ->count();
@@ -131,7 +131,7 @@ class IssueController extends Controller
         $member = Member::find($validated['member_id']);
         $member->logAction('issued', "Bulk checkout: {$issued} items for {$member->name}");
 
-        Cache::forget('library_insights');
+        $this->forgetAnalyticsCaches();
 
         return back()->with('success', $message);
     }
@@ -183,7 +183,7 @@ class IssueController extends Controller
 
         return DB::transaction(function () use ($validated) {
             $book = Book::lockForUpdate()->find($validated['book_id']);
-            $maxBooksPerMember = (int) (Setting::where('key', 'max_books_per_member')->first()?->value ?? 5);
+            $maxBooksPerMember = (int) SettingCache::get('max_books_per_member', 5);
             $activeIssueCount = BookIssue::where('member_id', $validated['member_id'])
                 ->where('status', 'issued')
                 ->count();
@@ -221,7 +221,7 @@ class IssueController extends Controller
             $member = Member::find($validated['member_id']);
             $member->logAction('issued', "Issued '{$book->title}' to {$member->name}");
 
-            Cache::forget('library_insights');
+            $this->forgetAnalyticsCaches();
 
             return redirect()->back()->with('success', 'Book issued successfully!');
         });
@@ -245,10 +245,10 @@ class IssueController extends Controller
         // Check for fine
         if (now()->greaterThan($issue->due_date)) {
             $overdueDays = (int) now()->startOfDay()->diffInDays(Carbon::parse($issue->due_date)->startOfDay());
-            $graceDays = (int) (\App\Models\Setting::where('key', 'grace_period_days')->first()?->value ?? 0);
+            $graceDays = (int) SettingCache::get('grace_period_days', 0);
 
             if ($overdueDays > $graceDays) {
-                $finePerDay = \App\Models\Setting::where('key', 'fine_per_day')->first()?->value ?? 5;
+                $finePerDay = SettingCache::get('fine_per_day', 5);
                 $fineAmount = $overdueDays * $finePerDay;
 
                 Fine::create([
@@ -258,12 +258,21 @@ class IssueController extends Controller
                     'status' => 'unpaid'
                 ]);
 
+                $this->forgetAnalyticsCaches();
+
                 return redirect()->back()->with('warning', "Book returned late ({$overdueDays} days)! Fine of LKR {$fineAmount} generated.");
             }
         }
 
-        Cache::forget('library_insights');
+        $this->forgetAnalyticsCaches();
 
         return redirect()->back()->with('success', 'Book returned successfully!');
+    }
+
+    private function forgetAnalyticsCaches(): void
+    {
+        Cache::forget('dashboard_stats');
+        Cache::forget('reports.analytics');
+        Cache::forget('library_insights');
     }
 }

@@ -10,9 +10,9 @@ const severityClasses = {
 };
 
 const riskClasses = {
-    low: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400',
-    medium: 'bg-amber-500/10 text-amber-600 dark:text-amber-400',
-    high: 'bg-rose-500/10 text-rose-600 dark:text-rose-400',
+    low: 'bg-emerald-500/20 text-emerald-800 border border-emerald-500/40 dark:bg-emerald-500/20 dark:text-emerald-300 dark:border-emerald-400/40',
+    medium: 'bg-amber-500/20 text-amber-900 border border-amber-500/40 dark:bg-amber-500/20 dark:text-amber-300 dark:border-amber-400/40',
+    high: 'bg-rose-500/20 text-rose-800 border border-rose-500/40 dark:bg-rose-500/20 dark:text-rose-300 dark:border-rose-400/40',
 };
 </script>
 

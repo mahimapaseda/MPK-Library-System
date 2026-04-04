@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\Member;
+use Illuminate\Support\Facades\Cache;
 use Inertia\Inertia;
 
 class MemberController extends Controller
@@ -59,6 +60,7 @@ class MemberController extends Controller
         ]);
 
         Member::create($validated);
+        Cache::forget('dashboard_stats');
 
         return redirect()->back()->with('success', 'Member added successfully!');
     }
@@ -80,6 +82,7 @@ class MemberController extends Controller
         }
 
         $member->update($validated);
+        Cache::forget('dashboard_stats');
 
         return redirect()->back()->with('success', 'Member updated successfully!');
     }
@@ -87,6 +90,7 @@ class MemberController extends Controller
     public function destroy(Member $member)
     {
         $member->delete();
+        Cache::forget('dashboard_stats');
         return redirect()->back()->with('success', 'Member deleted successfully!');
     }
 }

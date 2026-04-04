@@ -1,12 +1,15 @@
 <script setup>
 import AppLayout from '@/Layouts/AppLayout.vue';
 import { useForm, router } from '@inertiajs/vue3';
-import { computed } from 'vue';
+import { computed, ref } from 'vue';
 import { useAlert } from '@/composables/useAlert';
 
 const props = defineProps({
-    categories: Array
+    categories: Array,
+    filters: Object,
 });
+
+const searchQuery = ref(props.filters?.search || '');
 
 const stats = computed(() => ({
     total: props.categories?.length ?? 0,
@@ -32,7 +35,22 @@ const deleteCategory = async (id) => {
     if (confirmed) {
         router.delete(`/categories/${id}`);
     }
-}
+};
+
+const applySearch = () => {
+    router.get('/categories', {
+        search: searchQuery.value || undefined,
+    }, {
+        preserveState: true,
+        preserveScroll: true,
+        replace: true,
+    });
+};
+
+const clearSearch = () => {
+    searchQuery.value = '';
+    applySearch();
+};
 </script>
 
 <template>
@@ -88,9 +106,36 @@ const deleteCategory = async (id) => {
                         </div>
                     </div>
 
+                    <form @submit.prevent="applySearch" class="mb-4 shrink-0 flex items-center gap-2">
+                        <input
+                            v-model="searchQuery"
+                            type="text"
+                            placeholder="Search category name or description"
+                            class="flex-1 px-4 py-3 bg-slate-50/70 dark:bg-slate-900/70 border border-slate-200/70 dark:border-slate-700/70 rounded-2xl text-sm font-bold text-slate-800 dark:text-white placeholder:text-slate-400"
+                        />
+                        <button
+                            type="submit"
+                            class="px-4 py-3 rounded-xl bg-indigo-600 text-white text-[10px] font-black uppercase tracking-widest"
+                        >
+                            Search
+                        </button>
+                        <button
+                            v-if="searchQuery"
+                            type="button"
+                            @click="clearSearch"
+                            class="px-3 py-3 rounded-xl bg-slate-100/80 dark:bg-slate-800/80 border border-slate-200/70 dark:border-slate-700/70 text-[10px] font-black uppercase tracking-widest text-slate-600 dark:text-slate-200"
+                        >
+                            Clear
+                        </button>
+                    </form>
+
                     <div v-if="!categories?.length" class="rounded-3xl border border-dashed border-slate-300 dark:border-slate-700/70 py-16 text-center flex-1 flex flex-col items-center justify-center">
-                        <div class="text-sm font-black text-slate-700 dark:text-slate-200">No categories established yet</div>
-                        <div class="text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-slate-300 mt-2">Create your first classification to organize the catalog</div>
+                        <div class="text-sm font-black text-slate-700 dark:text-slate-200">
+                            {{ searchQuery ? 'No categories matched your search' : 'No categories established yet' }}
+                        </div>
+                        <div class="text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-slate-300 mt-2">
+                            {{ searchQuery ? 'Try another keyword or clear search' : 'Create your first classification to organize the catalog' }}
+                        </div>
                     </div>
 
                     <div v-else class="space-y-3 overflow-y-auto pr-2">
