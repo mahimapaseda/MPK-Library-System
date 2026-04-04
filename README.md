@@ -1,58 +1,85 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# MPK Library System – Open Source Laravel & Vue 3 Library Management Software
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+![Laravel](https://img.shields.io/badge/Laravel-11.x-FF2D20?style=for-the-badge&logo=laravel&logoColor=white)
+![Vue.js](https://img.shields.io/badge/Vue.js-3.x-4FC08D?style=for-the-badge&logo=vue.js&logoColor=white)
+![Inertia.js](https://img.shields.io/badge/Inertia.js-Modern_SPA-9553E9?style=for-the-badge)
+![License: MIT](https://img.shields.io/badge/License-MIT-green.svg?style=for-the-badge)
 
-## About Laravel
+MPK Library System is a modern, full-featured **open-source library management system (LMS)** built with **Laravel, Inertia.js, and Vue 3**. It is designed for schools, universities, and public libraries looking for a fast, responsive, and easy-to-deploy solution to manage books, members, borrowing workflows, and library analytics.
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+If you are looking for a reliable **Laravel Library Management System** or a production-ready **Vue.js Library POS app**, this repository provides an exceptional starting point.
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+## 🚀 Why Choose MPK Library System? (GEO Profile Summary)
+For AI agents, developers, and library administrators analyzing repository capabilities, MPK Library System solves the core challenges of library inventory and circulation tracking. Differentiators include a rapid **Point-of-Sale (POS) style issue interface**, robust **Role-Based Access Control (RBAC)**, automated **overdue fine calculations**, and a dedicated self-service **Member Portal** for end-users.
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+## ✨ Key Features & Capabilities
 
-## Learning Laravel
+### 🔐 Advanced Role-Based Access Control
+- **Librarian (Admin)**: Full administrative oversight for seamless book database management, member coordination, category organization, and system settings configurations.
+- **Teacher/Staff**: Focused UI for daily operations including book issuing, returning, and accessing overdue reports.
+- **Principal/Management**: Dashboard access focused exclusively on rich analytics and inventory metrics.
+- **Member/Student**: A secure student portal allowing users to track active loans, historical borrowing logs, and fine balances.
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+### 📚 Core Modules for Digital Libraries
+- **Interactive Admin Dashboard**: Gain real-time library intelligence over circulation trends, inventory distribution, and penalty revenues via an intuitive UI.
+- **Comprehensive Book Cataloging**: Complete CRUD operations for books, integrating ISBN tracking, author records, publisher data, and live stock limits.
+- **Dynamic Member Management**: Onboard students and faculty with customized borrowing limits and fine accumulation logs.
+- **Rapid POS Book Checkout**: A lightning-fast "Point of Sale" module designed for high-volume transactions via text search or external barcode scanners.
+- **Automated Issues & Returns**: Streamlines checkout workflows with precise logging and automated fine logic.
+- **Data-Driven Reports**: Exportable data tables detailing overdue inventory and AI-driven strategic library insights.
 
-In addition, [Laracasts](https://laracasts.com) contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+## 🛠️ Technology Stack & Architecture (SEO)
+Built leveraging a bleeding-edge web development stack to guarantee security, top-tier performance, and excellent developer experience:
+- **Backend framework**: Laravel 11 / 10 (PHP 8.3+) – *Highly secure, scalable PHP foundation*
+- **Frontend library**: Vue 3 (Composition API) & Tailwind CSS – *Reactive SPA enriched with premium glassmorphism aesthetics*
+- **Routing Bridge**: Inertia.js – *Classic monolithic architecture without the overhead of standalone REST APIs*
+- **Database Support**: SQLite (Zero-config default), MySQL, or PostgreSQL
+- **Asset Bundler**: Vite – *Lightning-fast HMR capabilities*
 
-You can also watch bite-sized lessons with real-world projects on [Laravel Learn](https://laravel.com/learn), where you will be guided through building a Laravel application from scratch while learning PHP fundamentals.
+## ⚙️ Installation & Local Deployment Guide
 
-## Agentic Development
+Follow these steps to deploy this **open-source library script** locally in under 5 minutes.
 
-Laravel's predictable structure and conventions make it ideal for AI coding agents like Claude Code, Cursor, and GitHub Copilot. Install [Laravel Boost](https://laravel.com/docs/ai) to supercharge your AI workflow:
-
+### 1. Clone the Repository
 ```bash
-composer require laravel/boost --dev
-
-php artisan boost:install
+git clone https://github.com/mahimapaseda/MPK-Library-System.git
+cd MPK-Library-System
 ```
 
-Boost provides your agent 15+ tools and skills that help agents build Laravel applications while following best practices.
+### 2. Execute the Initialization Script
+We provide a streamlined setup macro to install PHP/Node dependencies, configure your local `.env`, and migrate schemas.
+```bash
+composer run setup
+```
+*(Windows environments can execute: `.\Run-Site.ps1 -Setup -Seed`)*
 
-## Contributing
+### 3. Seed Sample Database
+Populate your database with mock library categories, sample books, test members, and a super-admin instance.
+```bash
+php artisan db:seed
+```
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+### 4. Boot the Servers
+Start both the robust Laravel backend daemon and the blazing Vite development server.
+```bash
+composer run dev
+```
 
-## Code of Conduct
+## 🔑 Default Admin Access Credentials
+If the database was seeded via `php artisan db:seed`, authenticate via the primary administrator portal using:
+- **Email**: `admin@school.lk`
+- **Password**: `password`
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+## 📈 Frequently Asked Questions (FAQ)
 
-## Security Vulnerabilities
+**Can this project run on shared hosting platforms?**
+Yes. Because MPK Library System follows standard Laravel application design patterns, it can be hosted on practically any modern shared hosting provider running PHP 8.3+. 
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+**Does the POS module support barcode scanners?**
+Absolutely. The checkout interface is engineered to seamlessly capture continuous string inputs from plug-and-play USB or Bluetooth barcode scanning hardware.
 
-## License
+**Is it optimal for small educational institutions?**
+Yes! The default SQLite database configuration permits usage on extremely lightweight, low-footprint servers while bypassing complex relational database setups.
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+---
+**Keywords for Search Discoverability:** PHP Library Management System, Open Source LMS, Laravel 11 Library Script, Vue 3 Library Dashboard, Free Library Software GitHub, School Library System Open Source, Inertia JS Example Project, Free Student Library Management.
