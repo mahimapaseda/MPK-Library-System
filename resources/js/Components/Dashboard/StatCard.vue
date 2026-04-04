@@ -19,7 +19,7 @@ const colorMap = {
 
 <template>
     <!-- Large variant (2-col span) -->
-    <div v-if="size === 'large'" class="sm:col-span-2 bento-card p-5 sm:p-8 flex flex-col justify-between group">
+    <div v-if="size === 'large'" class="sm:col-span-2 xl:col-span-1 bento-card p-5 sm:p-8 flex flex-col justify-between group">
         <div class="flex justify-between items-start">
             <div :class="[colorMap[color].bg, colorMap[color].text, 'p-4 rounded-2xl group-hover:scale-110 transition-transform duration-500']">
                 <slot name="icon" />

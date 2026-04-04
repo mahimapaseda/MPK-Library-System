@@ -45,7 +45,7 @@ body::before {
 }
 
 .dark body::before {
-    background-image: url('/bg.jpg');
+    background-image: url('/macos-26-tahoe-default-stock-light-mode-30-09-2025-1759266472-hd-wallpaper.webp');
 }
 
 body::after {
@@ -96,7 +96,7 @@ body::after {
 }
 
 @utility bento-card {
-    @apply glass-card hover:scale-[1.01] hover:shadow-lg active:scale-[0.99] cursor-pointer overflow-hidden relative;
+    @apply glass-card rounded-[30px] hover:scale-[1.01] hover:shadow-lg active:scale-[0.99] cursor-pointer overflow-hidden relative;
 }
 
 /* Global contrast fix for native selects in dark mode */
