@@ -98,24 +98,24 @@ const clearSearch = () => {
                     </form>
                 </section>
 
-                <section class="glass-card rounded-3xl p-5 sm:p-6 border-white/20 dark:border-slate-800/50 flex flex-col max-h-[calc(100vh-420px)] overflow-hidden">
-                    <div class="flex items-center justify-between gap-4 mb-5 shrink-0">
+                <section class="glass-card rounded-3xl p-5 sm:p-6 border-white/20 dark:border-slate-800/50 flex flex-col xl:max-h-[calc(100vh-420px)] xl:overflow-hidden">
+                    <div class="flex flex-wrap items-center justify-between gap-4 mb-5 shrink-0">
                         <div>
                             <h3 class="text-xl font-black text-slate-900 dark:text-white">Category registry</h3>
                             <p class="text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-slate-300 mt-1">Catalog taxonomy overview</p>
                         </div>
                     </div>
 
-                    <form @submit.prevent="applySearch" class="mb-4 shrink-0 flex items-center gap-2">
+                    <form @submit.prevent="applySearch" class="mb-4 shrink-0 flex flex-col sm:flex-row sm:items-center gap-2">
                         <input
                             v-model="searchQuery"
                             type="text"
                             placeholder="Search category name or description"
-                            class="flex-1 px-4 py-3 bg-slate-50/70 dark:bg-slate-900/70 border border-slate-200/70 dark:border-slate-700/70 rounded-2xl text-sm font-bold text-slate-800 dark:text-white placeholder:text-slate-400"
+                            class="w-full sm:flex-1 px-4 py-3 bg-slate-50/70 dark:bg-slate-900/70 border border-slate-200/70 dark:border-slate-700/70 rounded-2xl text-sm font-bold text-slate-800 dark:text-white placeholder:text-slate-400"
                         />
                         <button
                             type="submit"
-                            class="px-4 py-3 rounded-xl bg-indigo-600 text-white text-[10px] font-black uppercase tracking-widest"
+                            class="w-full sm:w-auto px-4 py-3 rounded-xl bg-indigo-600 text-white text-[10px] font-black uppercase tracking-widest"
                         >
                             Search
                         </button>
@@ -123,7 +123,7 @@ const clearSearch = () => {
                             v-if="searchQuery"
                             type="button"
                             @click="clearSearch"
-                            class="px-3 py-3 rounded-xl bg-slate-100/80 dark:bg-slate-800/80 border border-slate-200/70 dark:border-slate-700/70 text-[10px] font-black uppercase tracking-widest text-slate-600 dark:text-slate-200"
+                            class="w-full sm:w-auto px-3 py-3 rounded-xl bg-slate-100/80 dark:bg-slate-800/80 border border-slate-200/70 dark:border-slate-700/70 text-[10px] font-black uppercase tracking-widest text-slate-600 dark:text-slate-200"
                         >
                             Clear
                         </button>
@@ -138,7 +138,7 @@ const clearSearch = () => {
                         </div>
                     </div>
 
-                    <div v-else class="space-y-3 overflow-y-auto pr-2">
+                    <div v-else class="space-y-3 xl:overflow-y-auto xl:pr-2">
                         <div v-for="category in categories" :key="category.id" class="rounded-3xl border border-slate-200/70 dark:border-slate-700/70 bg-white/40 dark:bg-slate-900/50 p-5 flex flex-col sm:flex-row sm:items-start gap-4 sm:justify-between shrink-0">
                             <div class="min-w-0 flex-1">
                                 <div class="flex items-center gap-3 flex-wrap">

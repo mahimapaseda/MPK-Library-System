@@ -31,7 +31,7 @@ const colorMap = {
         </div>
         <div class="mt-4">
             <p class="text-sm font-bold text-slate-800 dark:text-slate-200">{{ label }}</p>
-            <p class="text-xs text-slate-500 dark:text-slate-500 mt-1">Updated just now</p>
+            <p class="text-xs text-slate-600 dark:text-slate-500 mt-1">Updated just now</p>
         </div>
         <div class="absolute -bottom-6 -right-6 w-32 h-32 bg-indigo-500/5 rounded-full blur-2xl group-hover:bg-indigo-500/10 transition-colors"></div>
     </div>
@@ -42,6 +42,6 @@ const colorMap = {
             <slot name="icon" />
         </div>
         <div class="text-3xl font-black text-slate-800 dark:text-white">{{ value }}</div>
-        <div class="text-xs font-bold text-slate-500 dark:text-slate-500 uppercase mt-1">{{ label }}</div>
+        <div class="text-xs font-bold text-slate-700 dark:text-slate-500 uppercase mt-1">{{ label }}</div>
     </div>
 </template>

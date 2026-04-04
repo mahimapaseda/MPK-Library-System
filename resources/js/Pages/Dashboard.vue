@@ -44,7 +44,7 @@ defineProps({
                 <div class="bento-card p-5 sm:p-6 bg-linear-to-br from-slate-900/10 to-transparent dark:from-white/5 dark:to-transparent flex flex-col justify-between group overflow-hidden">
                     <span class="text-[10px] font-black text-rose-500 uppercase tracking-widest">Revenue Loss</span>
                     <h3 class="text-xl font-black text-slate-800 dark:text-white mt-1">Rs. {{ stats.pending_fines }}</h3>
-                    <div class="text-[10px] font-bold text-slate-500 mt-2">Outstanding Fines</div>
+                    <div class="text-[10px] font-bold text-slate-700 dark:text-slate-300 mt-2">Outstanding Fines</div>
                 </div>
             </div>
 

@@ -299,7 +299,7 @@ const { isFullScreen, toggleFullScreen } = useFullScreen();
         </aside>
 
         <!-- Main -->
-        <main class="flex-1 flex flex-col min-w-0 overflow-hidden">
+        <main class="flex-1 flex flex-col min-w-0 overflow-x-hidden">
             <header class="min-h-16 shrink-0 flex items-center justify-between gap-3 px-4 sm:px-6 lg:px-8 glass-ghost m-3 sm:m-4 xl:ml-0 rounded-3xl z-20">
                 <div class="flex items-center gap-3 min-w-0">
                     <button @click="isMobileMenuOpen = true" class="xl:hidden p-2 rounded-xl bg-white/80 dark:bg-slate-800/60 text-slate-700 dark:text-slate-300 border border-slate-300/70 dark:border-slate-700/40">
@@ -317,7 +317,7 @@ const { isFullScreen, toggleFullScreen } = useFullScreen();
                     </div>
                     <button @click="toggleFullScreen"
                         :title="isFullScreen ? 'Exit fullscreen' : 'Enter fullscreen'"
-                        class="p-1.5 sm:p-2 rounded-lg bg-white/80 dark:bg-slate-800/60 text-slate-700 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-slate-200 transition border border-slate-300/70 dark:border-slate-700/40 shrink-0">
+                        class="hidden sm:inline-flex p-1.5 sm:p-2 rounded-lg bg-white/80 dark:bg-slate-800/60 text-slate-700 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-slate-200 transition border border-slate-300/70 dark:border-slate-700/40 shrink-0">
                         <svg v-if="!isFullScreen" class="h-4 w-4 sm:h-5 sm:w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"/>
                         </svg>
