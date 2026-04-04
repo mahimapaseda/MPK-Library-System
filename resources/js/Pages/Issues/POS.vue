@@ -15,6 +15,18 @@ const { alert } = useAlert();
 const memberInput = ref(null);
 const bookInput = ref(null);
 const scanMode = ref(true); // Default to scan mode for speed
+const scannerOpen = ref(false);
+const scannerTarget = ref('book');
+const scannerActive = ref(false);
+const scannerError = ref('');
+const scannerStatus = ref('');
+const scannerReaderId = 'pos-barcode-reader';
+let scannerInstance = null;
+let lastDecodedText = '';
+let lastDecodedAt = 0;
+
+const normalizeToken = (value) => String(value || '').trim().toUpperCase().replace(/\s+/g, '');
+const normalizeIsbn = (value) => normalizeToken(value).replace(/-/g, '');
 
 // ── Keyboard Shortcuts ──────────────────────────────────
 const handleGlobalKey = (e) => {
@@ -37,6 +49,9 @@ onMounted(() => {
 
 onUnmounted(() => {
     window.removeEventListener('keydown', handleGlobalKey);
+    clearTimeout(memberSearchTimeout);
+    clearTimeout(bookSearchTimeout);
+    stopScanner();
 });
 
 // ── Member Search ────────────────────────────────────────
@@ -46,29 +61,49 @@ const selectedMember = ref(null);
 const memberLoading = ref(false);
 let memberSearchTimeout = null;
 
-const searchMembers = () => {
-    clearTimeout(memberSearchTimeout);
-    memberSearchTimeout = setTimeout(async () => {
-        if (memberQuery.value.length < 2) {
-            memberResults.value = [];
+const runMemberLookup = async (query, { fromScan = false } = {}) => {
+    if (query.length < 2 && !fromScan) {
+        memberResults.value = [];
+        return;
+    }
+
+    memberLoading.value = true;
+    try {
+        const { data } = await axios.get('/issues/search-members', { params: { q: query } });
+        memberResults.value = data;
+
+        const normalizedQuery = normalizeToken(query);
+        const exactMatch = data.find((m) => normalizeToken(m.member_id) === normalizedQuery);
+
+        if (fromScan && exactMatch) {
+            selectMember(exactMatch);
+            bookInput.value?.focus();
             return;
         }
-        memberLoading.value = true;
-        try {
-            const { data } = await axios.get('/issues/search-members', { params: { q: memberQuery.value } });
-            memberResults.value = data;
-            
-            // Auto-select if in scan mode and exact match ID or only one result
-            if (scanMode.value && data.length === 1) {
-                const query = memberQuery.value.trim().toUpperCase();
-                if (data[0].member_id.toUpperCase() === query || (query.length > 5 && !isNaN(query))) {
-                    selectMember(data[0]);
-                    bookInput.value?.focus();
-                }
+
+        // Auto-select if in scan mode and exact match ID or only one result
+        if (scanMode.value && data.length === 1) {
+            if (normalizeToken(data[0].member_id) === normalizedQuery || (normalizedQuery.length > 5 && !isNaN(normalizedQuery))) {
+                selectMember(data[0]);
+                bookInput.value?.focus();
             }
-        } finally {
-            memberLoading.value = false;
         }
+
+        if (fromScan && !exactMatch) {
+            alert(`No member found for scanned code: ${query}`, {
+                title: 'Scan Result',
+                type: 'warning',
+            });
+        }
+    } finally {
+        memberLoading.value = false;
+    }
+};
+
+const searchMembers = () => {
+    clearTimeout(memberSearchTimeout);
+    memberSearchTimeout = setTimeout(() => {
+        runMemberLookup(memberQuery.value.trim());
     }, 150); // Faster debounce for scanner
 };
 
@@ -90,32 +125,160 @@ const bookResults = ref([]);
 const bookLoading = ref(false);
 let bookSearchTimeout = null;
 
-const searchBooks = () => {
-    clearTimeout(bookSearchTimeout);
-    bookSearchTimeout = setTimeout(async () => {
-        if (bookQuery.value.length < 2) {
+const runBookLookup = async (query, { fromScan = false } = {}) => {
+    if (query.length < 2 && !fromScan) {
+        bookResults.value = [];
+        return;
+    }
+
+    bookLoading.value = true;
+    try {
+        const { data } = await axios.get('/issues/search-books', { params: { q: query } });
+        bookResults.value = data;
+
+        const normalizedQuery = normalizeToken(query);
+        const normalizedIsbnQuery = normalizeIsbn(query);
+        const exactMatch = data.find((book) => {
+            const isbnExact = normalizeIsbn(book.isbn) === normalizedIsbnQuery;
+            const titleExact = normalizeToken(book.title) === normalizedQuery;
+            return isbnExact || titleExact;
+        });
+
+        if (fromScan && exactMatch) {
+            addToCart(exactMatch);
+            bookQuery.value = '';
             bookResults.value = [];
             return;
         }
-        bookLoading.value = true;
-        try {
-            const { data } = await axios.get('/issues/search-books', { params: { q: bookQuery.value } });
-            bookResults.value = data;
-            
-            // Auto-add if in scan mode and perfect ISBN/ID match
-            if (scanMode.value && data.length === 1) {
-                const query = bookQuery.value.trim().toUpperCase();
-                // Check if search matches ISBN (typical scanner output)
-                if (data[0].isbn === query || data[0].accession_number === query) {
-                    addToCart(data[0]);
-                    bookQuery.value = ''; // Clear for next scan
-                    bookResults.value = [];
-                }
+
+        // Auto-add if in scan mode and perfect ISBN match
+        if (scanMode.value && data.length === 1) {
+            if (normalizeIsbn(data[0].isbn) === normalizedIsbnQuery) {
+                addToCart(data[0]);
+                bookQuery.value = '';
+                bookResults.value = [];
             }
-        } finally {
-            bookLoading.value = false;
         }
+
+        if (fromScan && !exactMatch) {
+            alert(`No available book found for scanned code: ${query}`, {
+                title: 'Scan Result',
+                type: 'warning',
+            });
+        }
+    } finally {
+        bookLoading.value = false;
+    }
+};
+
+const searchBooks = () => {
+    clearTimeout(bookSearchTimeout);
+    bookSearchTimeout = setTimeout(() => {
+        runBookLookup(bookQuery.value.trim());
     }, 150); // Faster debounce for scanner
+};
+
+const processScannedValue = async (decodedText) => {
+    const scanned = String(decodedText || '').trim();
+    if (!scanned) return;
+
+    if (scannerTarget.value === 'member') {
+        memberQuery.value = scanned;
+        await runMemberLookup(scanned, { fromScan: true });
+        return;
+    }
+
+    bookQuery.value = scanned;
+    await runBookLookup(scanned, { fromScan: true });
+};
+
+const stopScanner = async () => {
+    if (!scannerInstance) return;
+
+    try {
+        if (scannerActive.value) {
+            await scannerInstance.stop();
+        }
+    } catch {
+        // Ignore stop errors from already-closed streams.
+    }
+
+    try {
+        await scannerInstance.clear();
+    } catch {
+        // Ignore cleanup errors.
+    }
+
+    scannerInstance = null;
+    scannerActive.value = false;
+};
+
+const closeScanner = async () => {
+    await stopScanner();
+    scannerOpen.value = false;
+    scannerStatus.value = '';
+    scannerError.value = '';
+};
+
+const startScanner = async () => {
+    scannerError.value = '';
+    scannerStatus.value = 'Requesting camera access...';
+
+    try {
+        const { Html5Qrcode, Html5QrcodeSupportedFormats } = await import('html5-qrcode');
+        const cameras = await Html5Qrcode.getCameras();
+        if (!cameras || cameras.length === 0) {
+            throw new Error('No camera found on this device.');
+        }
+
+        const preferredCamera = cameras.find((c) => /back|rear|environment/i.test(c.label));
+        const cameraId = preferredCamera?.id || cameras[0].id;
+
+        scannerInstance = new Html5Qrcode(scannerReaderId);
+        scannerStatus.value = 'Point the camera at a barcode.';
+
+        await scannerInstance.start(
+            cameraId,
+            {
+                fps: 12,
+                qrbox: { width: 280, height: 120 },
+                aspectRatio: 1.78,
+                formatsToSupport: [
+                    Html5QrcodeSupportedFormats.CODE_128,
+                    Html5QrcodeSupportedFormats.CODE_39,
+                    Html5QrcodeSupportedFormats.CODE_93,
+                    Html5QrcodeSupportedFormats.EAN_13,
+                    Html5QrcodeSupportedFormats.EAN_8,
+                    Html5QrcodeSupportedFormats.UPC_A,
+                    Html5QrcodeSupportedFormats.UPC_E,
+                    Html5QrcodeSupportedFormats.QR_CODE,
+                ],
+            },
+            async (decodedText) => {
+                const now = Date.now();
+                if (decodedText === lastDecodedText && now - lastDecodedAt < 1500) return;
+
+                lastDecodedText = decodedText;
+                lastDecodedAt = now;
+                await closeScanner();
+                await processScannedValue(decodedText);
+            },
+            () => {}
+        );
+
+        scannerActive.value = true;
+    } catch (error) {
+        scannerError.value = error?.message || 'Could not start barcode scanner.';
+        await stopScanner();
+    }
+};
+
+const openScanner = async (target) => {
+    scannerTarget.value = target;
+    scannerOpen.value = true;
+    lastDecodedText = '';
+    lastDecodedAt = 0;
+    await startScanner();
 };
 
 // ── Cart ─────────────────────────────────────────────────
@@ -252,7 +415,8 @@ const typeBadgeClass = (type) => ({
                                 </svg>
                             </div>
                             <h3 class="text-[11px] font-black uppercase tracking-widest text-slate-700 dark:text-slate-200">Borrower</h3>
-                            <Link href="/members" class="ml-auto text-[10px] font-black uppercase tracking-widest px-2.5 py-1.5 rounded-lg bg-indigo-600 text-white">Add</Link>
+                            <button @click="openScanner('member')" class="ml-auto text-[10px] font-black uppercase tracking-widest px-2.5 py-1.5 rounded-lg bg-emerald-600 text-white">Scan</button>
+                            <Link href="/members" class="text-[10px] font-black uppercase tracking-widest px-2.5 py-1.5 rounded-lg bg-indigo-600 text-white">Add</Link>
                         </div>
 
                         <div class="relative">
@@ -305,6 +469,7 @@ const typeBadgeClass = (type) => ({
                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
                             </div>
                             <h3 class="text-[11px] font-black uppercase tracking-widest text-slate-700 dark:text-slate-200">Find books</h3>
+                            <button @click="openScanner('book')" class="ml-auto text-[10px] font-black uppercase tracking-widest px-2.5 py-1.5 rounded-lg bg-emerald-600 text-white">Scan</button>
                         </div>
 
                         <div class="relative mb-4">
@@ -411,6 +576,31 @@ const typeBadgeClass = (type) => ({
                     </div>
                 </div>
             </aside>
+        </div>
+
+        <div v-if="scannerOpen" class="fixed inset-0 z-120 bg-slate-950/70 backdrop-blur-sm p-4 sm:p-6 flex items-center justify-center">
+            <div class="w-full max-w-xl rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 shadow-2xl overflow-hidden">
+                <div class="px-5 py-4 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between gap-3">
+                    <div>
+                        <h4 class="text-sm font-black text-slate-800 dark:text-white">Barcode Scanner</h4>
+                        <p class="text-[11px] font-bold uppercase tracking-widest text-slate-500 dark:text-slate-300">
+                            Scanning {{ scannerTarget === 'member' ? 'member ID' : 'book barcode' }}
+                        </p>
+                    </div>
+                    <button @click="closeScanner" class="px-3 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-[10px] font-black uppercase tracking-widest text-slate-700 dark:text-slate-200">
+                        Close
+                    </button>
+                </div>
+
+                <div class="p-5 space-y-3">
+                    <div :id="scannerReaderId" class="w-full min-h-72 rounded-2xl overflow-hidden bg-slate-950"></div>
+                    <p class="text-xs font-bold text-slate-600 dark:text-slate-300">{{ scannerStatus || 'Scanner ready.' }}</p>
+                    <p v-if="scannerError" class="text-xs font-bold text-rose-600 dark:text-rose-400">{{ scannerError }}</p>
+                    <p class="text-[11px] text-slate-500 dark:text-slate-400">
+                        Tip: you can also use a USB barcode scanner directly in the input fields.
+                    </p>
+                </div>
+            </div>
         </div>
     </AppLayout>
 </template>

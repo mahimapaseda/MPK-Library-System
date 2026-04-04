@@ -29,12 +29,17 @@ class IssueController extends Controller
     public function searchBooks(Request $request)
     {
         $query = $request->get('q', '');
+        $normalizedQuery = preg_replace('/[\s-]+/', '', (string) $query);
         $books = Book::with('category')
             ->where('available_quantity', '>', 0)
-            ->where(function ($q) use ($query) {
+            ->where(function ($q) use ($query, $normalizedQuery) {
                 $q->where('title', 'like', '%' . $query . '%')
                   ->orWhere('author', 'like', '%' . $query . '%')
                   ->orWhere('isbn', 'like', '%' . $query . '%');
+
+                if (!empty($normalizedQuery)) {
+                    $q->orWhereRaw("REPLACE(REPLACE(isbn, '-', ''), ' ', '') like ?", ['%' . $normalizedQuery . '%']);
+                }
             })
             ->limit(10)
             ->get(['id', 'title', 'author', 'isbn', 'available_quantity', 'category_id']);
