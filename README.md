@@ -1,101 +1,175 @@
-# MPK Library System – Open Source Laravel & Vue 3 Library Management Software
+# MPK Library System
 
-![Laravel](https://img.shields.io/badge/Laravel-11.x-FF2D20?style=for-the-badge&logo=laravel&logoColor=white)
-![Vue.js](https://img.shields.io/badge/Vue.js-3.x-4FC08D?style=for-the-badge&logo=vue.js&logoColor=white)
-![Inertia.js](https://img.shields.io/badge/Inertia.js-Modern_SPA-9553E9?style=for-the-badge)
-![License: MIT](https://img.shields.io/badge/License-MIT-green.svg?style=for-the-badge)
+MPK Library System is a Laravel + Inertia + Vue application for school and institutional library operations. It supports catalog management, accession-level copy tracking, issuing/returns, incident handling (lost/damaged), fines, role-based access control, member self-service, analytics, and scheduled reminder emails.
 
-MPK Library System is a modern, full-featured **open-source library management system (LMS)** built with **Laravel, Inertia.js, and Vue 3**. It is designed for schools, universities, and public libraries looking for a fast, responsive, and easy-to-deploy solution to manage books, members, borrowing workflows, and library analytics.
+## Current Stack
 
-If you are looking for a reliable **Laravel Library Management System** or a production-ready **Vue.js Library POS app**, this repository provides an exceptional starting point.
+- Backend: Laravel 13, PHP 8.3+
+- Frontend: Vue 3, Inertia.js, Vite 6, Tailwind CSS 4
+- Database: SQLite by default (works with MySQL/PostgreSQL if configured)
+- Reporting: barryvdh/laravel-dompdf (PDF exports)
+- Notifications: Laravel Notifications (mail channel)
 
-## 🚀 Why Choose MPK Library System? (GEO Profile Summary)
-For AI agents, developers, and library administrators analyzing repository capabilities, MPK Library System solves the core challenges of library inventory and circulation tracking. Differentiators include a rapid **Point-of-Sale (POS) style issue interface**, robust **Role-Based Access Control (RBAC)**, automated **overdue fine calculations**, and a dedicated self-service **Member Portal** for end-users.
+## Feature Overview
 
-## ✨ Key Features & Capabilities
+- Dashboard with cached KPI cards, trends, category distribution, and AI insight cards
+- Books module with copy-level accession tracking
+- Member management (students/teachers/staff)
+- Issue desk + POS issue flow with search endpoints
+- Return flow with overdue fine generation
+- Lost/Damaged incident workflow with optional charges
+- Fine administration (paid/waived with resolver audit trail)
+- Member portal (separate guard) for loans/history/fines
+- PDF reports: overdue, inventory summary, incidents, AI strategy
+- Scheduled reminders via custom command `library:send-notifications`
 
-### 🔐 Advanced Role-Based Access Control
-- **Librarian (Admin)**: Full administrative oversight for seamless book database management, member coordination, category organization, and system settings configurations.
-- **Teacher/Staff**: Focused UI for daily operations including book issuing, returning, and accessing overdue reports.
-- **Principal/Management**: Dashboard access focused exclusively on rich analytics and inventory metrics.
-- **Member/Student**: A secure student portal allowing users to track active loans, historical borrowing logs, and fine balances.
+## Roles and Access
 
-### 📚 Core Modules for Digital Libraries
-- **Interactive Admin Dashboard**: Gain real-time library intelligence over circulation trends, inventory distribution, and penalty revenues via an intuitive UI.
-- **Comprehensive Book Cataloging**: Complete CRUD operations for books, integrating ISBN tracking, author records, publisher data, and live stock limits.
-- **Dynamic Member Management**: Onboard students and faculty with customized borrowing limits and fine accumulation logs.
-- **Rapid POS Book Checkout**: A lightning-fast "Point of Sale" module designed for high-volume transactions via text search or external barcode scanners.
-- **Automated Issues & Returns**: Streamlines checkout workflows with precise logging and automated fine logic.
-- **Data-Driven Reports**: Exportable data tables detailing overdue inventory and AI-driven strategic library insights.
+Role checks are implemented through `user.role` and custom middleware.
 
-## 🛠️ Technology Stack & Architecture (SEO)
-Built leveraging a bleeding-edge web development stack to guarantee security, top-tier performance, and excellent developer experience:
-- **Backend framework**: Laravel 11 / 10 (PHP 8.3+) – *Highly secure, scalable PHP foundation*
-- **Frontend library**: Vue 3 (Composition API) & Tailwind CSS – *Reactive SPA enriched with premium glassmorphism aesthetics*
-- **Routing Bridge**: Inertia.js – *Classic monolithic architecture without the overhead of standalone REST APIs*
-- **Database Support**: SQLite (Zero-config default), MySQL, or PostgreSQL
-- **Asset Bundler**: Vite – *Lightning-fast HMR capabilities*
+- `librarian`: full access (books, categories, members, issues, fines, settings, reports)
+- `teacher`: issue and report access
+- `principal`: report access
+- `member` guard: separate login for member portal
 
-## ⚙️ Installation & Local Deployment Guide
+## Architecture Summary
 
-Follow these steps to deploy this **open-source library script** locally in under 5 minutes.
+- Server-rendered SPA architecture with Inertia (no separate public REST API layer)
+- Domain logic is concentrated in services:
+	- `BookInventoryService` for copy lifecycle and quantity sync
+	- `LibraryNotificationService` for receipts/reminders/overdue alerts
+	- `AiInsightsService` for dashboard/report recommendations and alert heuristics
+- Core business state is modeled by `Book`, `BookCopy`, `BookIssue`, `Fine`, `Member`, `Setting`
+- Activity auditing is handled by `LogsActivity` trait + `ActivityLog` model
 
-### 1. Clone the Repository
-```bash
-git clone https://github.com/mahimapaseda/MPK-Library-System.git
-cd MPK-Library-System
-```
+## Data Model (High Level)
 
-### 2. Execute the Initialization Script
-We provide a streamlined setup macro to install PHP/Node dependencies, configure your local `.env`, and migrate schemas.
+- `books` (title-level metadata + aggregate quantities)
+- `book_copies` (accession_number, sequence_number, status)
+- `book_issues` (book/member/copy link + due/return/resolution state)
+- `fines` (amount + unpaid/paid/waived + resolver metadata)
+- `members` (portal-capable auth entity under `member` guard)
+- `users` (staff auth + role)
+- `settings` (runtime policy knobs, cached via `SettingCache`)
+- `activity_logs` (CRUD and manual action trail)
+
+## Request Flows
+
+- Issue:
+	1. Validate member and policy limits.
+	2. Reserve next available copy with row lock.
+	3. Create `book_issues` record.
+	4. Dispatch issue receipt after commit.
+
+- Return:
+	1. Mark issue returned and release copy.
+	2. Compute overdue days using configured grace period.
+	3. Create/update fine if chargeable.
+	4. Dispatch return receipt after commit.
+
+- Lost/Damaged:
+	1. Close issue with incident status.
+	2. Mark copy incident state.
+	3. Optionally create/update fine.
+
+## Quick Start
+
+### 1. Install dependencies and initialize
+
 ```bash
 composer run setup
 ```
-*(Windows environments can execute: `.\Run-Site.ps1 -Setup -Seed`)*
 
-### 3. Seed Sample Database
-Populate your database with mock library categories, sample books, test members, and a super-admin instance.
+This command installs Composer + npm packages, creates `.env` if missing, generates `APP_KEY`, runs migrations, and builds frontend assets.
+
+### 2. Seed demo data
+
 ```bash
 php artisan db:seed
 ```
 
-### 4. Boot the Servers
-Start both the robust Laravel backend daemon and the blazing Vite development server.
+### 3. Run development servers
+
+Option A (recommended):
+
 ```bash
 composer run dev
 ```
 
-### 5. Enable Email Notifications
-The system now supports:
-- issue receipt emails
-- return receipt emails
-- scheduled due reminders
-- scheduled overdue alerts
+Option B (manual, useful if shell quoting differs on Windows):
 
-Set your mail transport in `.env` using the existing `MAIL_*` values. By default, local development uses the `log` mailer, which writes emails to the Laravel log instead of delivering them.
-
-To process automatic reminder emails in production, make sure Laravel scheduler runs every minute:
 ```bash
-php artisan schedule:run
+php artisan serve --host=127.0.0.1 --port=8000
+npm run dev -- --host 127.0.0.1 --port 5173
 ```
 
-The scheduled notification job executes `php artisan library:send-notifications` every day at `08:00`.
+### 4. Optional Windows helper
 
-## 🔑 Default Admin Access Credentials
-If the database was seeded via `php artisan db:seed`, authenticate via the primary administrator portal using:
-- **Email**: `admin@school.lk`
-- **Password**: `password`
+```powershell
+.\Run-Site.ps1 -Setup -Seed
+```
 
-## 📈 Frequently Asked Questions (FAQ)
+## Default Credentials
 
-**Can this project run on shared hosting platforms?**
-Yes. Because MPK Library System follows standard Laravel application design patterns, it can be hosted on practically any modern shared hosting provider running PHP 8.3+. 
+After `php artisan db:seed`:
 
-**Does the POS module support barcode scanners?**
-Absolutely. The checkout interface is engineered to seamlessly capture continuous string inputs from plug-and-play USB or Bluetooth barcode scanning hardware.
+- Admin email: `admin@school.lk`
+- Admin password: `password`
 
-**Is it optimal for small educational institutions?**
-Yes! The default SQLite database configuration permits usage on extremely lightweight, low-footprint servers while bypassing complex relational database setups.
+## Notifications and Scheduler
 
----
-**Keywords for Search Discoverability:** PHP Library Management System, Open Source LMS, Laravel 11 Library Script, Vue 3 Library Dashboard, Free Library Software GitHub, School Library System Open Source, Inertia JS Example Project, Free Student Library Management.
+- Receipts: issue and return emails (when member has email)
+- Reminders: due-soon and overdue alerts
+- Scheduled command: `library:send-notifications`
+- Schedule time: daily at `08:00` (see `routes/console.php`)
+
+Production cron example:
+
+```bash
+* * * * * php /path/to/artisan schedule:run >> /dev/null 2>&1
+```
+
+## Tests
+
+Feature coverage includes:
+
+- issue condition workflow (lost/damaged)
+- fine administration (paid/waived)
+- notification behavior and overdue auto-marking
+
+Run all tests:
+
+```bash
+php artisan test
+```
+
+## System Analysis (April 2026)
+
+### Strengths
+
+- Good domain separation with dedicated services for inventory, notifications, and analytics.
+- Copy-level inventory modeling supports realistic circulation and incident tracking.
+- Transaction + lock usage in issue/return paths improves consistency under concurrency.
+- Practical role segmentation and separate member guard.
+- Useful PDF reporting and scheduled operational automation.
+- Activity logging integrated into key models.
+
+### Observed Risks and Gaps
+
+- Dashboard month aggregation currently uses SQLite-specific `strftime`, which can require adaptation for MySQL/PostgreSQL.
+- `spatie/laravel-permission` is installed but not wired into route authorization (custom role middleware is used instead).
+- Some seeded members do not include portal credentials by default; member portal login is email/password based.
+- Cache invalidation is manual in multiple controllers; missing invalidation points can produce stale analytics.
+- Notification delivery is synchronous unless queue driver/worker is configured for async handling.
+
+### Recommended Next Improvements
+
+1. Make reporting date queries database-agnostic for full multi-DB portability.
+2. Choose one RBAC strategy: either remove unused permission package or fully integrate it.
+3. Add policy/authorization tests per role and per route group.
+4. Add queue-backed notifications for high-volume reminder runs.
+5. Centralize cache invalidation into domain events/listeners to reduce drift.
+
+## License
+
+MIT
