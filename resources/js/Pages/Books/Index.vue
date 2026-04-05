@@ -130,7 +130,7 @@ const deleteBook = async (id) => {
                         <svg class="absolute left-4 top-[2.65rem] h-5 w-5 text-slate-400 group-focus-within:text-indigo-500 transition-colors" viewBox="0 0 20 20" fill="currentColor">
                             <path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd"/>
                         </svg>
-                        <input v-model="search" type="text" placeholder="Title, author, or ISBN"
+                        <input v-model="search" type="text" placeholder="Title, author, ISBN, or accession"
                             class="w-full pl-11 pr-5 py-3 bg-white/60 dark:bg-slate-900/70 border-2 border-slate-100 dark:border-slate-700/70 rounded-2xl text-sm font-bold text-slate-800 dark:text-white placeholder:text-slate-400">
                     </div>
 
@@ -186,9 +186,14 @@ const deleteBook = async (id) => {
                     </div>
 
                     <div class="flex items-center justify-between gap-3">
-                        <span class="text-[10px] font-black uppercase tracking-widest" :class="book.available_quantity > 0 ? 'text-indigo-600 dark:text-indigo-400' : 'text-rose-500'">
-                            {{ book.available_quantity }} / {{ book.total_quantity }} AVAIL.
-                        </span>
+                        <div class="text-right">
+                            <span class="text-[10px] font-black uppercase tracking-widest" :class="book.available_quantity > 0 ? 'text-indigo-600 dark:text-indigo-400' : 'text-rose-500'">
+                                {{ book.available_quantity }} / {{ book.total_quantity }} ACTIVE
+                            </span>
+                            <div class="mt-1 text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-slate-300">
+                                Lost {{ book.lost_copies_count || 0 }} · Damaged {{ book.damaged_copies_count || 0 }}
+                            </div>
+                        </div>
                         <div class="flex items-center gap-2">
                             <button class="p-2 bg-white/80 dark:bg-slate-800/60 border border-slate-300/70 dark:border-slate-700/50 text-slate-700 dark:text-slate-300 hover:text-indigo-600 hover:bg-indigo-500/10 dark:hover:text-indigo-300 rounded-xl transition-all" title="Edit UI not yet connected">
                                 <svg class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z"/></svg>
@@ -202,7 +207,7 @@ const deleteBook = async (id) => {
             </div>
 
             <div class="hidden lg:block overflow-x-auto">
-                <table class="w-full min-w-[980px] text-left border-collapse">
+                <table class="w-full min-w-245 text-left border-collapse">
                     <thead>
                         <tr class="bg-slate-50/50 dark:bg-slate-900/50">
                             <th class="px-4 sm:px-6 lg:px-8 py-4 text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest leading-none">Book Details</th>
@@ -235,9 +240,14 @@ const deleteBook = async (id) => {
                                             :class="book.available_quantity > 0 ? 'bg-indigo-500' : 'bg-rose-500'"
                                             :style="{ width: (book.available_quantity / book.total_quantity * 100) + '%' }"></div>
                                     </div>
-                                    <span class="text-[10px] font-black uppercase tracking-widest" :class="book.available_quantity > 0 ? 'text-indigo-600 dark:text-indigo-400' : 'text-rose-500'">
-                                        {{ book.available_quantity }} / {{ book.total_quantity }} AVAIL.
-                                    </span>
+                                    <div class="text-center">
+                                        <span class="text-[10px] font-black uppercase tracking-widest" :class="book.available_quantity > 0 ? 'text-indigo-600 dark:text-indigo-400' : 'text-rose-500'">
+                                            {{ book.available_quantity }} / {{ book.total_quantity }} ACTIVE
+                                        </span>
+                                        <div class="mt-1 text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-slate-300">
+                                            Issued {{ book.issued_copies_count || 0 }} · Lost {{ book.lost_copies_count || 0 }} · Damaged {{ book.damaged_copies_count || 0 }}
+                                        </div>
+                                    </div>
                                 </div>
                             </td>
                             <td class="px-4 sm:px-6 lg:px-8 py-5 text-right">

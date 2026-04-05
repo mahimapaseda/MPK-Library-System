@@ -18,8 +18,10 @@
     </div>
 
     <div class="stats">
-        <p><strong>Total Books in Collection:</strong> {{ $totalBooks }}</p>
-        <p><strong>Total Books Available:</strong> {{ $availableBooks }}</p>
+        <p><strong>Total Active Copies:</strong> {{ $totalBooks }}</p>
+        <p><strong>Total Available Copies:</strong> {{ $availableBooks }}</p>
+        <p><strong>Lost Copies:</strong> {{ $lostCopies }}</p>
+        <p><strong>Damaged Copies:</strong> {{ $damagedCopies }}</p>
     </div>
 
     <h3>Inventory by Category</h3>

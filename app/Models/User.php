@@ -35,4 +35,9 @@ class User extends Authenticatable
     {
         return $this->hasOne(Member::class);
     }
+
+    public function resolvedFines()
+    {
+        return $this->hasMany(Fine::class, 'resolved_by_user_id');
+    }
 }

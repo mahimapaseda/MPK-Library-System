@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Services\BookInventoryService;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
@@ -37,10 +38,12 @@ class BookSeeder extends Seeder
             ['title' => 'The Intelligent Investor', 'author' => 'Benjamin Graham', 'isbn' => '9780061715525', 'category' => 'Business & Economics', 'language' => 'English', 'quantity' => 3],
         ];
 
+        $inventoryService = new BookInventoryService();
+
         foreach ($sampleBooks as $bookData) {
             $category = $categories->where('name', $bookData['category'])->first();
             if ($category) {
-                \App\Models\Book::create([
+                $book = \App\Models\Book::create([
                     'title' => $bookData['title'],
                     'author' => $bookData['author'],
                     'isbn' => $bookData['isbn'],
@@ -50,6 +53,8 @@ class BookSeeder extends Seeder
                     'available_quantity' => $bookData['quantity'],
                     'location_rack' => 'R-' . str_pad(rand(1, 50), 2, '0', STR_PAD_LEFT)
                 ]);
+
+                $inventoryService->provisionCopies($book, (int) $bookData['quantity']);
             }
         }
     }

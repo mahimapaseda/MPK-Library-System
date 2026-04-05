@@ -2,7 +2,7 @@
 import AppLayout from '@/Layouts/AppLayout.vue';
 import PaginationControls from '@/Components/PaginationControls.vue';
 import { computed, ref, watch } from 'vue';
-import { Link, useForm, router } from '@inertiajs/vue3';
+import { Link, useForm, router, usePage } from '@inertiajs/vue3';
 import { useAlert } from '@/composables/useAlert';
 
 const props = defineProps({
@@ -17,6 +17,10 @@ const status = ref(props.filters?.status || '');
 const book_id = ref(props.filters?.book_id || '');
 const member_id = ref(props.filters?.member_id || '');
 const showIssueModal = ref(false);
+const showConditionModal = ref(false);
+const selectedIssue = ref(null);
+const page = usePage();
+const currencySymbol = computed(() => page.props.settings?.currency_symbol || 'LKR');
 
 const stats = computed(() => {
     const rows = props.issues?.data ?? [];
@@ -26,6 +30,7 @@ const stats = computed(() => {
         active: rows.filter((issue) => issue.status === 'issued').length,
         overdue: rows.filter((issue) => issue.status === 'overdue').length,
         returned: rows.filter((issue) => issue.status === 'returned').length,
+        incidents: rows.filter((issue) => issue.status === 'lost' || issue.status === 'damaged').length,
     };
 });
 
@@ -63,6 +68,12 @@ const issueForm = useForm({
     due_date: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
 });
 
+const conditionForm = useForm({
+    status: 'lost',
+    notes: '',
+    fine_amount: '',
+});
+
 const submitIssueForm = () => {
     issueForm.post('/issues', {
         onSuccess: () => {
@@ -82,6 +93,34 @@ const returnBook = async (id) => {
         router.post(`/issues/${id}/return`);
     }
 };
+
+const openConditionModal = (issue, nextStatus) => {
+    selectedIssue.value = issue;
+    conditionForm.reset();
+    conditionForm.status = nextStatus;
+    conditionForm.notes = issue.condition_notes || '';
+    conditionForm.fine_amount = issue.condition_fee || '';
+    showConditionModal.value = true;
+};
+
+const closeConditionModal = () => {
+    showConditionModal.value = false;
+    selectedIssue.value = null;
+    conditionForm.reset();
+};
+
+const submitConditionForm = () => {
+    if (!selectedIssue.value) {
+        return;
+    }
+
+    conditionForm.post(`/issues/${selectedIssue.value.id}/condition`, {
+        preserveScroll: true,
+        onSuccess: () => closeConditionModal(),
+    });
+};
+
+const statusLabel = (status) => status === 'damaged' ? 'damaged' : status;
 </script>
 
 <template>
@@ -89,7 +128,7 @@ const returnBook = async (id) => {
         <template #header>Manage Book Issues</template>
 
         <div class="space-y-5">
-            <section class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+            <section class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-4">
                 <div class="glass-card rounded-3xl p-5">
                     <div class="text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-300">Visible issues</div>
                     <div class="mt-2 text-3xl font-black text-slate-900 dark:text-white">{{ stats.visibleIssues }}</div>
@@ -105,6 +144,10 @@ const returnBook = async (id) => {
                 <div class="glass-card rounded-3xl p-5">
                     <div class="text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-300">Returned</div>
                     <div class="mt-2 text-3xl font-black text-emerald-600 dark:text-emerald-300">{{ stats.returned }}</div>
+                </div>
+                <div class="glass-card rounded-3xl p-5">
+                    <div class="text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-300">Incidents</div>
+                    <div class="mt-2 text-3xl font-black text-slate-700 dark:text-slate-100">{{ stats.incidents }}</div>
                 </div>
             </section>
 
@@ -148,6 +191,8 @@ const returnBook = async (id) => {
                             <option value="issued">Still Issued</option>
                             <option value="returned">Returned</option>
                             <option value="overdue">Overdue</option>
+                            <option value="lost">Lost</option>
+                            <option value="damaged">Damaged</option>
                         </select>
                     </div>
 
@@ -198,7 +243,7 @@ const returnBook = async (id) => {
                         <tr v-for="issue in issues.data" :key="issue.id" class="group hover:bg-white/40 dark:hover:bg-white/5 transition-colors">
                             <td class="px-8 py-5">
                                 <div class="text-sm font-black text-slate-800 dark:text-slate-100 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors tracking-tight">{{ issue.book.title }}</div>
-                                <div class="text-[10px] font-bold text-slate-400 dark:text-slate-300 uppercase tracking-tighter mt-0.5">Physical Asset</div>
+                                <div class="text-[10px] font-bold text-slate-400 dark:text-slate-300 uppercase tracking-tighter mt-0.5">{{ issue.copy?.accession_number || 'Legacy Copy' }}</div>
                             </td>
                             <td class="px-8 py-5">
                                 <div class="text-xs font-bold text-slate-600 dark:text-slate-300">{{ issue.member.name }}</div>
@@ -213,17 +258,33 @@ const returnBook = async (id) => {
                                     'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20': issue.status === 'issued',
                                     'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20': issue.status === 'returned',
                                     'bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20': issue.status === 'overdue',
-                                    'bg-slate-500/10 text-slate-600 dark:text-slate-400 border-slate-500/20': issue.status === 'lost',
+                                    'bg-slate-500/10 text-slate-700 dark:text-slate-300 border-slate-500/20': issue.status === 'lost',
+                                    'bg-orange-500/10 text-orange-600 dark:text-orange-400 border-orange-500/20': issue.status === 'damaged',
                                 }" class="inline-flex items-center px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest border">
-                                    {{ issue.status }}
+                                    {{ statusLabel(issue.status) }}
                                 </span>
+                                <div v-if="issue.condition_notes" class="mt-2 max-w-[18rem] text-[10px] font-bold leading-relaxed text-slate-500 dark:text-slate-300">
+                                    {{ issue.condition_notes }}
+                                </div>
                             </td>
                             <td class="px-8 py-5 text-right">
-                                <button v-if="issue.status === 'issued' || issue.status === 'overdue'" 
-                                    @click="returnBook(issue.id)"
-                                    class="px-4 py-2 bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-600 hover:text-white rounded-xl text-[10px] font-black uppercase tracking-widest transition-all active:scale-95 border border-indigo-500/20">
-                                    Finalize Return
-                                </button>
+                                <div v-if="issue.status === 'issued' || issue.status === 'overdue'" class="flex flex-wrap justify-end gap-2">
+                                    <button
+                                        @click="openConditionModal(issue, 'damaged')"
+                                        class="px-4 py-2 bg-orange-500/10 text-orange-600 dark:text-orange-400 hover:bg-orange-600 hover:text-white rounded-xl text-[10px] font-black uppercase tracking-widest transition-all active:scale-95 border border-orange-500/20">
+                                        Mark Damaged
+                                    </button>
+                                    <button
+                                        @click="openConditionModal(issue, 'lost')"
+                                        class="px-4 py-2 bg-slate-500/10 text-slate-700 dark:text-slate-300 hover:bg-slate-700 hover:text-white rounded-xl text-[10px] font-black uppercase tracking-widest transition-all active:scale-95 border border-slate-500/20">
+                                        Mark Lost
+                                    </button>
+                                    <button
+                                        @click="returnBook(issue.id)"
+                                        class="px-4 py-2 bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-600 hover:text-white rounded-xl text-[10px] font-black uppercase tracking-widest transition-all active:scale-95 border border-indigo-500/20">
+                                        Finalize Return
+                                    </button>
+                                </div>
                                 <span v-else class="text-[10px] font-black text-slate-300 dark:text-slate-700 uppercase tracking-widest">Completed</span>
                             </td>
                         </tr>
@@ -281,6 +342,59 @@ const returnBook = async (id) => {
                                 class="px-6 py-3 text-xs font-black uppercase tracking-widest text-slate-400 hover:text-slate-600 dark:hover:text-white transition-colors">Discard</button>
                             <button type="submit" :disabled="issueForm.processing"
                                 class="px-8 py-3 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-black uppercase tracking-widest rounded-2xl shadow-2xl shadow-indigo-500/20 hover:glow-indigo transition-all active:scale-95 disabled:opacity-50">Authorize Issue</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </transition>
+
+        <transition enter-active-class="transition duration-300 ease-out" enter-from-class="opacity-0 scale-95" enter-to-class="opacity-100 scale-100" leave-active-class="transition duration-200 ease-in" leave-from-class="opacity-100 scale-100" leave-to-class="opacity-0 scale-95">
+            <div v-if="showConditionModal" class="fixed inset-0 bg-slate-950/40 dark:bg-black/60 backdrop-blur-md flex items-center justify-center p-4 z-50">
+                <div class="glass-card rounded-4xl shadow-2xl border-white/20 dark:border-slate-700/30 w-full max-w-xl overflow-hidden">
+                    <div class="px-8 py-6 border-b border-white/10 dark:border-slate-800/50 flex items-center justify-between">
+                        <div>
+                            <h3 class="text-xl font-black text-slate-800 dark:text-white tracking-tight">Incident Resolution</h3>
+                            <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">Close this issue as lost or damaged</p>
+                        </div>
+                        <button @click="closeConditionModal" class="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-white transition-all hover:rotate-90">
+                            <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                        </button>
+                    </div>
+                    <form @submit.prevent="submitConditionForm" class="p-8 space-y-6">
+                        <div class="rounded-2xl bg-slate-50/60 dark:bg-slate-950/60 border border-slate-200/70 dark:border-slate-700/70 p-4">
+                            <div class="text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-300">Issue record</div>
+                            <div class="mt-2 text-sm font-black text-slate-800 dark:text-white">{{ selectedIssue?.book?.title }}</div>
+                            <div class="text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-slate-300 mt-1">{{ selectedIssue?.member?.name }}</div>
+                        </div>
+
+                        <div>
+                            <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 px-1">Incident Type</label>
+                            <select v-model="conditionForm.status" class="w-full px-5 py-3.5 bg-slate-50/50 dark:bg-slate-950/50 border-2 border-slate-100 dark:border-slate-800/50 rounded-2xl text-sm font-bold text-slate-800 dark:text-white focus:outline-none focus:border-indigo-500">
+                                <option value="lost">Lost</option>
+                                <option value="damaged">Damaged</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 px-1">Charge Amount ({{ currencySymbol }})</label>
+                            <input v-model="conditionForm.fine_amount" type="number" min="0" step="0.01"
+                                class="w-full px-5 py-3.5 bg-slate-50/50 dark:bg-slate-950/50 border-2 border-slate-100 dark:border-slate-800/50 rounded-2xl text-sm font-bold text-slate-800 dark:text-white focus:outline-none focus:border-indigo-500">
+                        </div>
+
+                        <div>
+                            <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 px-1">Staff Notes</label>
+                            <textarea v-model="conditionForm.notes" rows="4"
+                                class="w-full px-5 py-3.5 bg-slate-50/50 dark:bg-slate-950/50 border-2 border-slate-100 dark:border-slate-800/50 rounded-2xl text-sm font-bold text-slate-800 dark:text-white focus:outline-none focus:border-indigo-500"
+                                placeholder="Add inspection details, member explanation, or recovery notes"></textarea>
+                        </div>
+
+                        <div class="pt-4 flex justify-end gap-3">
+                            <button type="button" @click="closeConditionModal"
+                                class="px-6 py-3 text-xs font-black uppercase tracking-widest text-slate-400 hover:text-slate-600 dark:hover:text-white transition-colors">Cancel</button>
+                            <button type="submit" :disabled="conditionForm.processing"
+                                class="px-8 py-3 bg-slate-900 hover:bg-slate-800 text-white text-xs font-black uppercase tracking-widest rounded-2xl transition-all disabled:opacity-50">Save Incident</button>
                         </div>
                     </form>
                 </div>

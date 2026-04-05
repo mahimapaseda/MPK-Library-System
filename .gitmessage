@@ -1,0 +1,45 @@
+# <type>(<scope>): <subject>
+# |<----   Limiting the subject line to 50 characters.  --->|
+#
+# Explain why this change is being made
+# |<----   Try to limit each line to a maximum of 72 characters.   --->|
+#
+# Provide links or keys to any relevant ticket/issue/PR
+#
+# --- COMMIT END ---
+# Type can be:
+#   feat     (new feature)
+#   fix      (bug fix)
+#   refactor (refactoring code)
+#   style    (formatting, missing semicolons, etc)
+#   docs     (changes to documentation)
+#   test     (adding or refactoring tests)
+#   perf     (performance improvements)
+#   ci       (CI/CD configuration)
+#   chore    (dependency updates, tool config)
+#
+# Scope can be:
+#   books      (book catalog features)
+#   issues     (book issue/checkout features)
+#   members    (member management)
+#   fines      (charge/fine administration)
+#   reports    (reporting and analytics)
+#   inventory  (copy/inventory tracking)
+#   ui         (user interface)
+#   api        (API endpoints)
+#   db         (database/migrations)
+#   auth       (authentication/authorization)
+#
+# Subject line imperative mood ("add" not "added" or "adds")
+# Do not include the issue number in the subject
+# Do not end subject line with a period
+#
+# Body should explain what and why, not how
+# Each line max 72 chars (except for long URLs)
+# Separate subject from body with a blank line
+#
+# Footer area for issue references:
+# References: #123
+# Closes: #456
+# Breaking-Change: description of breaking change
+# --- END COMMIT MESSAGE TEMPLATE ---

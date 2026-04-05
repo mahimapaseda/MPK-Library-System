@@ -9,6 +9,8 @@ const statusClasses = {
     issued: 'bg-amber-500/20 text-amber-900 border border-amber-500/40 dark:bg-amber-500/20 dark:text-amber-300 dark:border-amber-400/40',
     returned: 'bg-emerald-500/20 text-emerald-800 border border-emerald-500/40 dark:bg-emerald-500/20 dark:text-emerald-300 dark:border-emerald-400/40',
     overdue: 'bg-rose-500/20 text-rose-800 border border-rose-500/40 dark:bg-rose-500/20 dark:text-rose-300 dark:border-rose-400/40',
+    lost: 'bg-slate-500/20 text-slate-800 border border-slate-500/40 dark:bg-slate-500/20 dark:text-slate-200 dark:border-slate-400/40',
+    damaged: 'bg-orange-500/20 text-orange-800 border border-orange-500/40 dark:bg-orange-500/20 dark:text-orange-300 dark:border-orange-400/40',
 };
 </script>
 

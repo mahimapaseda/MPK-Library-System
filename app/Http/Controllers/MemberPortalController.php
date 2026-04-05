@@ -16,11 +16,11 @@ class MemberPortalController extends Controller
 
         return Inertia::render('Member/Dashboard', [
             'stats' => [
-                'current_loans' => BookIssue::where('member_id', $member->id)->where('status', 'issued')->count(),
+                'current_loans' => BookIssue::where('member_id', $member->id)->whereIn('status', ['issued', 'overdue'])->count(),
                 'total_borrowed' => BookIssue::where('member_id', $member->id)->count(),
                 'unpaid_fines' => Fine::where('member_id', $member->id)->where('status', 'unpaid')->sum('amount'),
             ],
-            'recent_loans' => BookIssue::with('book')
+            'recent_loans' => BookIssue::with(['book', 'copy'])
                 ->where('member_id', $member->id)
                 ->latest()
                 ->take(5)
@@ -31,7 +31,7 @@ class MemberPortalController extends Controller
     public function history()
     {
         $member = Auth::guard('member')->user();
-        $history = BookIssue::with('book')
+        $history = BookIssue::with(['book', 'copy'])
             ->where('member_id', $member->id)
             ->latest()
             ->paginate(10);
@@ -44,7 +44,7 @@ class MemberPortalController extends Controller
     public function fines()
     {
         $member = Auth::guard('member')->user();
-        $fines = Fine::with('book_issue.book')
+        $fines = Fine::with(['bookIssue.book', 'bookIssue.copy'])
             ->where('member_id', $member->id)
             ->latest()
             ->get();

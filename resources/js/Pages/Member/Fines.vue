@@ -59,7 +59,7 @@ const { isFullScreen, toggleFullScreen } = useFullScreen();
                 <div>
                     <span class="text-[10px] font-black uppercase tracking-widest text-rose-500 mb-2 block">Finance</span>
                     <h2 class="text-4xl font-black text-slate-900 dark:text-white tracking-tight">Outstanding Fines</h2>
-                    <p class="text-xs font-bold text-slate-600 dark:text-slate-500 uppercase tracking-widest mt-2">Manage your overdue penalties and payment status</p>
+                    <p class="text-xs font-bold text-slate-600 dark:text-slate-500 uppercase tracking-widest mt-2">Manage overdue, lost-item, and damage charges</p>
                 </div>
                 <div class="flex gap-4">
                     <div class="px-8 py-4 bg-rose-500/10 border border-rose-500/20 rounded-4xl text-center glow-rose">
@@ -86,7 +86,9 @@ const { isFullScreen, toggleFullScreen } = useFullScreen();
                                 <td class="px-8 py-6">
                                     <template v-if="fine.book_issue?.book">
                                         <div class="font-black text-sm text-slate-800 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">{{ fine.book_issue.book.title }}</div>
-                                        <div class="text-[10px] font-bold text-slate-600 dark:text-slate-500 uppercase tracking-widest">Returned Late</div>
+                                        <div class="text-[10px] font-bold text-slate-600 dark:text-slate-500 uppercase tracking-widest">
+                                            {{ fine.book_issue.status === 'lost' ? 'Lost Item Charge' : fine.book_issue.status === 'damaged' ? 'Damaged Item Charge' : 'Returned Late' }}
+                                        </div>
                                     </template>
                                     <template v-else>
                                         <div class="font-black text-sm text-slate-800 dark:text-white">General Fine</div>
@@ -99,7 +101,11 @@ const { isFullScreen, toggleFullScreen } = useFullScreen();
                                     {{ new Date(fine.created_at).toLocaleDateString() }}
                                 </td>
                                 <td class="px-8 py-6 text-right">
-                                    <span class="px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border" :class="fine.status === 'unpaid' ? 'bg-rose-500/10 text-rose-400 border-rose-500/20' : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'">
+                                    <span class="px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border" :class="{
+                                        'bg-rose-500/10 text-rose-400 border-rose-500/20': fine.status === 'unpaid',
+                                        'bg-emerald-500/10 text-emerald-400 border-emerald-500/20': fine.status === 'paid',
+                                        'bg-slate-500/10 text-slate-300 border-slate-500/20': fine.status === 'waived',
+                                    }">
                                         {{ fine.status }}
                                     </span>
                                 </td>

@@ -2,27 +2,32 @@
 
 namespace App\Http\Controllers;
 
-use App\Support\SettingCache;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 use App\Models\Book;
-use App\Models\Member;
 use App\Models\BookIssue;
 use App\Models\Fine;
-use Inertia\Inertia;
+use App\Models\Member;
+use App\Services\BookInventoryService;
+use App\Services\LibraryNotificationService;
+use App\Support\SettingCache;
 use Carbon\Carbon;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
+use Inertia\Inertia;
 
 class IssueController extends Controller
 {
+    public function __construct(
+        private readonly LibraryNotificationService $notificationService,
+        private readonly BookInventoryService $inventoryService,
+    ) {
+    }
+
     public function pos()
     {
-        $defaultLoanDays = (int) SettingCache::get('loan_duration_days', 14);
-        $maxBooksPerMember = (int) SettingCache::get('max_books_per_member', 5);
-
         return Inertia::render('Issues/POS', [
-            'defaultLoanDays' => $defaultLoanDays,
-            'maxBooksPerMember' => $maxBooksPerMember,
+            'defaultLoanDays' => (int) SettingCache::get('loan_duration_days', 14),
+            'maxBooksPerMember' => (int) SettingCache::get('max_books_per_member', 5),
         ]);
     }
 
@@ -30,15 +35,20 @@ class IssueController extends Controller
     {
         $query = $request->get('q', '');
         $normalizedQuery = preg_replace('/[\s-]+/', '', (string) $query);
+
         $books = Book::with('category')
             ->where('available_quantity', '>', 0)
-            ->where(function ($q) use ($query, $normalizedQuery) {
-                $q->where('title', 'like', '%' . $query . '%')
-                  ->orWhere('author', 'like', '%' . $query . '%')
-                  ->orWhere('isbn', 'like', '%' . $query . '%');
+            ->where(function ($nestedQuery) use ($query, $normalizedQuery) {
+                $nestedQuery->where('title', 'like', '%' . $query . '%')
+                    ->orWhere('author', 'like', '%' . $query . '%')
+                    ->orWhere('isbn', 'like', '%' . $query . '%')
+                    ->orWhereHas('copies', function ($copyQuery) use ($query) {
+                        $copyQuery->where('status', 'available')
+                            ->where('accession_number', 'like', '%' . $query . '%');
+                    });
 
-                if (!empty($normalizedQuery)) {
-                    $q->orWhereRaw("REPLACE(REPLACE(isbn, '-', ''), ' ', '') like ?", ['%' . $normalizedQuery . '%']);
+                if (! empty($normalizedQuery)) {
+                    $nestedQuery->orWhereRaw("REPLACE(REPLACE(isbn, '-', ''), ' ', '') like ?", ['%' . $normalizedQuery . '%']);
                 }
             })
             ->limit(10)
@@ -50,12 +60,13 @@ class IssueController extends Controller
     public function searchMembers(Request $request)
     {
         $query = $request->get('q', '');
-        $members = Member::where('name', 'like', '%' . $query . '%')
-            ->orWhere('member_id', 'like', '%' . $query . '%')
-            ->limit(10)
-            ->get(['id', 'name', 'member_id', 'type', 'grade']);
 
-        return response()->json($members);
+        return response()->json(
+            Member::where('name', 'like', '%' . $query . '%')
+                ->orWhere('member_id', 'like', '%' . $query . '%')
+                ->limit(10)
+                ->get(['id', 'name', 'member_id', 'type', 'grade'])
+        );
     }
 
     public function issueMultiple(Request $request)
@@ -72,8 +83,9 @@ class IssueController extends Controller
         $maxBooksPerMember = (int) SettingCache::get('max_books_per_member', 5);
 
         DB::transaction(function () use ($validated, $maxBooksPerMember, &$errors, &$issued) {
-            $activeIssueCount = BookIssue::where('member_id', $validated['member_id'])
-                ->where('status', 'issued')
+            $activeIssueCount = BookIssue::query()
+                ->where('member_id', $validated['member_id'])
+                ->whereIn('status', ['issued', 'overdue'])
                 ->count();
 
             $remainingSlots = max(0, $maxBooksPerMember - $activeIssueCount);
@@ -89,16 +101,17 @@ class IssueController extends Controller
                     continue;
                 }
 
-                $book = Book::lockForUpdate()->find($item['book_id']);
+                $book = Book::query()->lockForUpdate()->find($item['book_id']);
 
-                if ($book->available_quantity <= 0) {
-                    $errors[] = "'{$book->title}' is not available.";
+                if (! $book || $book->available_quantity <= 0) {
+                    $errors[] = "'{$book?->title}' is not available.";
                     continue;
                 }
 
-                $exists = BookIssue::where('member_id', $validated['member_id'])
+                $exists = BookIssue::query()
+                    ->where('member_id', $validated['member_id'])
                     ->where('book_id', $item['book_id'])
-                    ->where('status', 'issued')
+                    ->whereIn('status', ['issued', 'overdue'])
                     ->exists();
 
                 if ($exists) {
@@ -106,15 +119,23 @@ class IssueController extends Controller
                     continue;
                 }
 
-                BookIssue::create([
-                    'book_id' => $item['book_id'],
+                $copy = $this->inventoryService->reserveAvailableCopy($book);
+
+                if (! $copy) {
+                    $errors[] = "No accession copy is currently available for '{$book->title}'.";
+                    continue;
+                }
+
+                $issue = BookIssue::query()->create([
+                    'book_id' => $book->id,
+                    'book_copy_id' => $copy->id,
                     'member_id' => $validated['member_id'],
                     'issued_at' => now(),
                     'due_date' => $item['due_date'],
                     'status' => 'issued',
                 ]);
 
-                $book->decrement('available_quantity');
+                DB::afterCommit(fn () => $this->notificationService->sendIssueReceipt($issue->loadMissing(['book', 'member', 'copy'])));
                 $issued++;
             }
         });
@@ -123,13 +144,13 @@ class IssueController extends Controller
             return back()->with('error', 'Could not issue any books. ' . implode(' ', $errors));
         }
 
-        $message = "{$issued} book" . ($issued > 1 ? 's' : '') . " issued successfully!";
+        $message = "{$issued} book" . ($issued > 1 ? 's' : '') . ' issued successfully!';
         if ($errors) {
             $message .= ' Skipped: ' . implode(' ', $errors);
         }
 
         $member = Member::find($validated['member_id']);
-        $member->logAction('issued', "Bulk checkout: {$issued} items for {$member->name}");
+        $member?->logAction('issued', "Bulk checkout: {$issued} items for {$member->name}");
 
         $this->forgetAnalyticsCaches();
 
@@ -138,29 +159,32 @@ class IssueController extends Controller
 
     public function index(Request $request)
     {
-        $issues = BookIssue::with(['book', 'member'])
+        $issues = BookIssue::with(['book', 'member', 'copy'])
             ->when($request->search, function ($query, $search) {
-                $query->whereHas('book', function ($q) use ($search) {
-                    $q->where('title', 'like', "%{$search}%");
-                })->orWhereHas('member', function ($q) use ($search) {
-                    $q->where('name', 'like', "%{$search}%")
-                        ->orWhere('member_id', 'like', "%{$search}%");
+                $query->where(function ($nestedQuery) use ($search) {
+                    $nestedQuery->whereHas('book', fn ($bookQuery) => $bookQuery->where('title', 'like', "%{$search}%"))
+                        ->orWhereHas('member', function ($memberQuery) use ($search) {
+                            $memberQuery->where('name', 'like', "%{$search}%")
+                                ->orWhere('member_id', 'like', "%{$search}%");
+                        })
+                        ->orWhereHas('copy', fn ($copyQuery) => $copyQuery->where('accession_number', 'like', "%{$search}%"));
                 });
             })
             ->when($request->status, function ($query, $status) {
                 if ($status === 'overdue') {
-                    $query->where('status', 'issued')
-                        ->whereDate('due_date', '<', now());
+                    $query->where(function ($overdueQuery) {
+                        $overdueQuery->where('status', 'overdue')
+                            ->orWhere(function ($issuedQuery) {
+                                $issuedQuery->where('status', 'issued')
+                                    ->whereDate('due_date', '<', now());
+                            });
+                    });
                 } else {
                     $query->where('status', $status);
                 }
             })
-            ->when($request->book_id, function ($query, $book_id) {
-                $query->where('book_id', $book_id);
-            })
-            ->when($request->member_id, function ($query, $member_id) {
-                $query->where('member_id', $member_id);
-            })
+            ->when($request->book_id, fn ($query, $bookId) => $query->where('book_id', $bookId))
+            ->when($request->member_id, fn ($query, $memberId) => $query->where('member_id', $memberId))
             ->latest()
             ->paginate(15)
             ->withQueryString();
@@ -169,7 +193,7 @@ class IssueController extends Controller
             'issues' => $issues,
             'books' => Book::where('available_quantity', '>', 0)->latest()->take(50)->get(['id', 'title']),
             'members' => Member::latest()->take(50)->get(['id', 'name', 'member_id']),
-            'filters' => $request->only(['search', 'status', 'book_id', 'member_id'])
+            'filters' => $request->only(['search', 'status', 'book_id', 'member_id']),
         ]);
     }
 
@@ -182,10 +206,11 @@ class IssueController extends Controller
         ]);
 
         return DB::transaction(function () use ($validated) {
-            $book = Book::lockForUpdate()->find($validated['book_id']);
+            $book = Book::query()->lockForUpdate()->find($validated['book_id']);
             $maxBooksPerMember = (int) SettingCache::get('max_books_per_member', 5);
-            $activeIssueCount = BookIssue::where('member_id', $validated['member_id'])
-                ->where('status', 'issued')
+            $activeIssueCount = BookIssue::query()
+                ->where('member_id', $validated['member_id'])
+                ->whereIn('status', ['issued', 'overdue'])
                 ->count();
 
             if ($activeIssueCount >= $maxBooksPerMember) {
@@ -194,32 +219,39 @@ class IssueController extends Controller
                 ]);
             }
 
-            if ($book->available_quantity <= 0) {
+            if (! $book || $book->available_quantity <= 0) {
                 return redirect()->back()->withErrors(['book_id' => 'This book is not currently available.']);
             }
 
-            // Check if member already has this book issued
-            $exists = BookIssue::where('member_id', $validated['member_id'])
+            $exists = BookIssue::query()
+                ->where('member_id', $validated['member_id'])
                 ->where('book_id', $validated['book_id'])
-                ->where('status', 'issued')
+                ->whereIn('status', ['issued', 'overdue'])
                 ->exists();
 
             if ($exists) {
                 return redirect()->back()->withErrors(['member_id' => 'This member already has an active issue of this book.']);
             }
 
-            BookIssue::create([
-                'book_id' => $validated['book_id'],
+            $copy = $this->inventoryService->reserveAvailableCopy($book);
+
+            if (! $copy) {
+                return redirect()->back()->withErrors(['book_id' => 'No accession copy is currently available.']);
+            }
+
+            $issue = BookIssue::query()->create([
+                'book_id' => $book->id,
+                'book_copy_id' => $copy->id,
                 'member_id' => $validated['member_id'],
                 'issued_at' => now(),
                 'due_date' => $validated['due_date'],
-                'status' => 'issued'
+                'status' => 'issued',
             ]);
 
-            $book->decrement('available_quantity');
+            DB::afterCommit(fn () => $this->notificationService->sendIssueReceipt($issue->loadMissing(['book', 'member', 'copy'])));
 
             $member = Member::find($validated['member_id']);
-            $member->logAction('issued', "Issued '{$book->title}' to {$member->name}");
+            $member?->logAction('issued', "Issued '{$book->title}' ({$copy->accession_number}) to {$member->name}");
 
             $this->forgetAnalyticsCaches();
 
@@ -229,44 +261,126 @@ class IssueController extends Controller
 
     public function returnBook(Request $request, BookIssue $issue)
     {
-        if ($issue->status === 'returned') {
-            return redirect()->back()->with('error', 'Book is already returned.');
+        if (in_array($issue->status, ['returned', 'lost', 'damaged'], true)) {
+            return redirect()->back()->with('error', 'This issue is already closed.');
         }
 
-        $issue->update([
-            'returned_at' => now(),
-            'status' => 'returned'
+        return DB::transaction(function () use ($issue) {
+            $issue = BookIssue::with(['book', 'member', 'copy'])->lockForUpdate()->findOrFail($issue->id);
+
+            $issue->update([
+                'returned_at' => now(),
+                'resolved_at' => null,
+                'status' => 'returned',
+            ]);
+
+            if ($issue->copy) {
+                $this->inventoryService->markCopyAvailable($issue->copy);
+            }
+
+            DB::afterCommit(fn () => $this->notificationService->sendReturnReceipt($issue->loadMissing(['book', 'member', 'copy'])));
+
+            $issue->member->logAction('returned', "Returned '{$issue->book->title}' from {$issue->member->name}");
+
+            if (now()->greaterThan($issue->due_date)) {
+                $overdueDays = (int) now()->startOfDay()->diffInDays(Carbon::parse($issue->due_date)->startOfDay());
+                $graceDays = (int) SettingCache::get('grace_period_days', 0);
+
+                if ($overdueDays > $graceDays) {
+                    $finePerDay = (float) SettingCache::get('fine_per_day', 5);
+                    $fineAmount = $overdueDays * $finePerDay;
+
+                    Fine::updateOrCreate(
+                        [
+                            'book_issue_id' => $issue->id,
+                            'member_id' => $issue->member_id,
+                        ],
+                        [
+                            'amount' => $fineAmount,
+                            'status' => 'unpaid',
+                            'paid_at' => null,
+                            'waived_at' => null,
+                            'resolution_notes' => null,
+                            'resolved_by_user_id' => null,
+                        ]
+                    );
+
+                    $this->forgetAnalyticsCaches();
+
+                    return redirect()->back()->with('warning', "Book returned late ({$overdueDays} days)! Fine of " . SettingCache::get('currency_symbol', 'LKR') . ' ' . number_format($fineAmount, 2) . ' generated.');
+                }
+            }
+
+            $this->forgetAnalyticsCaches();
+
+            return redirect()->back()->with('success', 'Book returned successfully!');
+        });
+    }
+
+    public function markCondition(Request $request, BookIssue $issue)
+    {
+        $validated = $request->validate([
+            'status' => 'required|in:lost,damaged',
+            'notes' => 'nullable|string|max:1000',
+            'fine_amount' => 'nullable|numeric|min:0',
         ]);
 
-        $issue->book->increment('available_quantity');
-
-        $issue->member->logAction('returned', "Returned '{$issue->book->title}' from {$issue->member->name}");
-
-        // Check for fine
-        if (now()->greaterThan($issue->due_date)) {
-            $overdueDays = (int) now()->startOfDay()->diffInDays(Carbon::parse($issue->due_date)->startOfDay());
-            $graceDays = (int) SettingCache::get('grace_period_days', 0);
-
-            if ($overdueDays > $graceDays) {
-                $finePerDay = SettingCache::get('fine_per_day', 5);
-                $fineAmount = $overdueDays * $finePerDay;
-
-                Fine::create([
-                    'book_issue_id' => $issue->id,
-                    'member_id' => $issue->member_id,
-                    'amount' => $fineAmount,
-                    'status' => 'unpaid'
-                ]);
-
-                $this->forgetAnalyticsCaches();
-
-                return redirect()->back()->with('warning', "Book returned late ({$overdueDays} days)! Fine of LKR {$fineAmount} generated.");
-            }
+        if (in_array($issue->status, ['returned', 'lost', 'damaged'], true)) {
+            return redirect()->back()->with('error', 'This issue is already closed and cannot be marked again.');
         }
 
-        $this->forgetAnalyticsCaches();
+        return DB::transaction(function () use ($issue, $validated) {
+            $issue = BookIssue::with(['book', 'member', 'copy'])->lockForUpdate()->findOrFail($issue->id);
 
-        return redirect()->back()->with('success', 'Book returned successfully!');
+            if (in_array($issue->status, ['returned', 'lost', 'damaged'], true)) {
+                return redirect()->back()->with('error', 'This issue is already closed and cannot be marked again.');
+            }
+
+            $issue->update([
+                'status' => $validated['status'],
+                'returned_at' => $validated['status'] === 'damaged' ? now() : null,
+                'resolved_at' => now(),
+                'condition_notes' => $validated['notes'] ?? null,
+                'condition_fee' => $validated['fine_amount'] ?? null,
+            ]);
+
+            if ($issue->copy) {
+                $this->inventoryService->markCopyIncident($issue->copy, $validated['status']);
+            }
+
+            $fineAmount = (float) ($validated['fine_amount'] ?? 0);
+
+            if ($fineAmount > 0) {
+                Fine::updateOrCreate(
+                    [
+                        'book_issue_id' => $issue->id,
+                        'member_id' => $issue->member_id,
+                    ],
+                    [
+                        'amount' => $fineAmount,
+                        'status' => 'unpaid',
+                        'paid_at' => null,
+                        'waived_at' => null,
+                        'resolution_notes' => null,
+                        'resolved_by_user_id' => null,
+                    ]
+                );
+            }
+
+            $incidentLabel = $validated['status'] === 'lost' ? 'lost' : 'damaged';
+            $feeMessage = $fineAmount > 0
+                ? ' with a charge of ' . SettingCache::get('currency_symbol', 'LKR') . ' ' . number_format($fineAmount, 2)
+                : '';
+
+            $issue->member->logAction(
+                $validated['status'],
+                ucfirst($incidentLabel) . " '{$issue->book->title}' ({$issue->copy?->accession_number}) for {$issue->member->name}{$feeMessage}"
+            );
+
+            $this->forgetAnalyticsCaches();
+
+            return redirect()->back()->with('warning', ucfirst($incidentLabel) . " workflow completed{$feeMessage}.");
+        });
     }
 
     private function forgetAnalyticsCaches(): void

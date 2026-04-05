@@ -65,6 +65,22 @@ Start both the robust Laravel backend daemon and the blazing Vite development se
 composer run dev
 ```
 
+### 5. Enable Email Notifications
+The system now supports:
+- issue receipt emails
+- return receipt emails
+- scheduled due reminders
+- scheduled overdue alerts
+
+Set your mail transport in `.env` using the existing `MAIL_*` values. By default, local development uses the `log` mailer, which writes emails to the Laravel log instead of delivering them.
+
+To process automatic reminder emails in production, make sure Laravel scheduler runs every minute:
+```bash
+php artisan schedule:run
+```
+
+The scheduled notification job executes `php artisan library:send-notifications` every day at `08:00`.
+
 ## 🔑 Default Admin Access Credentials
 If the database was seeded via `php artisan db:seed`, authenticate via the primary administrator portal using:
 - **Email**: `admin@school.lk`

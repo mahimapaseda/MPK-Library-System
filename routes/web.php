@@ -10,6 +10,7 @@ use App\Http\Controllers\SettingController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\MemberLoginController;
 use App\Http\Controllers\MemberPortalController;
+use App\Http\Controllers\FineController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
@@ -38,6 +39,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/reports', [ReportController::class, 'index'])->name('reports.index');
         Route::get('/reports/overdue', [ReportController::class, 'overdueBooks'])->name('reports.overdue');
         Route::get('/reports/inventory', [ReportController::class, 'inventorySummary'])->name('reports.inventory');
+        Route::get('/reports/incidents', [ReportController::class, 'incidents'])->name('reports.incidents');
         Route::get('/reports/ai-strategy', [ReportController::class, 'aiStrategy'])->name('reports.ai-strategy');
     });
 
@@ -46,6 +48,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/issues', [IssueController::class, 'index'])->name('issues.index');
         Route::post('/issues', [IssueController::class, 'issueBook'])->name('issues.store');
         Route::post('/issues/{issue}/return', [IssueController::class, 'returnBook'])->name('issues.return');
+        Route::post('/issues/{issue}/condition', [IssueController::class, 'markCondition'])->name('issues.condition');
 
         // POS Issue
         Route::get('/issues/pos', [IssueController::class, 'pos'])->name('issues.pos');
@@ -63,6 +66,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
         // Members
         Route::resource('members', MemberController::class);
+
+        // Charges
+        Route::get('/fines', [FineController::class, 'index'])->name('fines.index');
+        Route::post('/fines/{fine}/resolve', [FineController::class, 'resolve'])->name('fines.resolve');
 
         // Settings
         Route::get('/settings', [SettingController::class, 'index'])->name('settings.index');

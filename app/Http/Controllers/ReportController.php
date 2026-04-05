@@ -5,8 +5,8 @@ namespace App\Http\Controllers;
 use App\Models\Book;
 use App\Models\BookIssue;
 use App\Models\Category;
+use App\Models\Fine;
 use App\Services\AiInsightsService;
-use Illuminate\Http\Request;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Facades\Cache;
 use Inertia\Inertia;
@@ -17,40 +17,42 @@ class ReportController extends Controller
     {
         $analytics = Cache::remember('reports.analytics', 300, function () {
             $now = now();
-            $days = collect(range(6, 0))->map(fn($d) => $now->copy()->subDays($d)->format('Y-m-d'));
+            $days = collect(range(6, 0))->map(fn ($day) => $now->copy()->subDays($day)->format('Y-m-d'));
 
-            $issuedStats = BookIssue::where('created_at', '>=', $now->copy()->subDays(7))
+            $issuedStats = BookIssue::query()
+                ->where('created_at', '>=', $now->copy()->subDays(7))
                 ->selectRaw('DATE(created_at) as date, count(*) as total')
                 ->groupBy('date')
                 ->get()
                 ->pluck('total', 'date');
 
-            $returnedStats = BookIssue::where('returned_at', '>=', $now->copy()->subDays(7))
+            $returnedStats = BookIssue::query()
+                ->where('returned_at', '>=', $now->copy()->subDays(7))
                 ->selectRaw('DATE(returned_at) as date, count(*) as total')
                 ->groupBy('date')
                 ->get()
                 ->pluck('total', 'date');
 
-            $trends = $days->map(fn($date) => [
-                'date' => $date,
-                'issued' => $issuedStats->get($date, 0),
-                'returned' => $returnedStats->get($date, 0),
-            ]);
-
-            $distribution = Category::withCount('books')->get()->map(fn($c) => [
-                'name' => $c->name,
-                'count' => $c->books_count,
-            ]);
-
-            $revenue = [
-                'paid' => (float) \App\Models\Fine::where('status', 'paid')->sum('amount'),
-                'pending' => (float) \App\Models\Fine::where('status', 'unpaid')->sum('amount'),
+            $incidentSummary = [
+                'lost' => BookIssue::query()->where('status', 'lost')->count(),
+                'damaged' => BookIssue::query()->where('status', 'damaged')->count(),
             ];
 
             return [
-                'trends' => $trends,
-                'distribution' => $distribution,
-                'revenue' => $revenue,
+                'trends' => $days->map(fn ($date) => [
+                    'date' => $date,
+                    'issued' => $issuedStats->get($date, 0),
+                    'returned' => $returnedStats->get($date, 0),
+                ]),
+                'distribution' => Category::withCount('books')->get()->map(fn ($category) => [
+                    'name' => $category->name,
+                    'count' => $category->books_count,
+                ]),
+                'revenue' => [
+                    'paid' => (float) Fine::where('status', 'paid')->sum('amount'),
+                    'pending' => (float) Fine::where('status', 'unpaid')->sum('amount'),
+                ],
+                'incidents' => $incidentSummary,
             ];
         });
 
@@ -62,19 +64,25 @@ class ReportController extends Controller
     public function aiStrategy(AiInsightsService $insightsService)
     {
         $insights = $insightsService->buildDashboardInsights();
-        $pdf = Pdf::loadView('reports.ai_strategy', compact('insights'));
-        return $pdf->download('ai-strategy-report.pdf');
+
+        return Pdf::loadView('reports.ai_strategy', compact('insights'))
+            ->download('ai-strategy-report.pdf');
     }
 
     public function overdueBooks()
     {
-        $overdueIssues = BookIssue::with(['book', 'member'])
-            ->where('status', 'issued')
-            ->where('due_date', '<', now())
+        $overdueIssues = BookIssue::with(['book', 'member', 'copy'])
+            ->where(function ($query) {
+                $query->where('status', 'overdue')
+                    ->orWhere(function ($issuedQuery) {
+                        $issuedQuery->where('status', 'issued')
+                            ->where('due_date', '<', now());
+                    });
+            })
             ->get();
 
-        $pdf = Pdf::loadView('reports.overdue', compact('overdueIssues'));
-        return $pdf->download('overdue-books-report.pdf');
+        return Pdf::loadView('reports.overdue', compact('overdueIssues'))
+            ->download('overdue-books-report.pdf');
     }
 
     public function inventorySummary()
@@ -82,8 +90,21 @@ class ReportController extends Controller
         $categories = Category::withCount('books')->get();
         $totalBooks = Book::sum('total_quantity');
         $availableBooks = Book::sum('available_quantity');
+        $lostCopies = BookIssue::where('status', 'lost')->count();
+        $damagedCopies = BookIssue::where('status', 'damaged')->count();
 
-        $pdf = Pdf::loadView('reports.inventory', compact('categories', 'totalBooks', 'availableBooks'));
-        return $pdf->download('inventory-summary.pdf');
+        return Pdf::loadView('reports.inventory', compact('categories', 'totalBooks', 'availableBooks', 'lostCopies', 'damagedCopies'))
+            ->download('inventory-summary.pdf');
+    }
+
+    public function incidents()
+    {
+        $incidents = BookIssue::with(['book', 'member', 'copy', 'fine'])
+            ->whereIn('status', ['lost', 'damaged'])
+            ->latest('resolved_at')
+            ->get();
+
+        return Pdf::loadView('reports.incidents', compact('incidents'))
+            ->download('incidents-report.pdf');
     }
 }

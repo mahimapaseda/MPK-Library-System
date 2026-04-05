@@ -50,7 +50,7 @@ const summary = computed(() => ({
     loanDays: Number(form.settings.loan_duration_days || 0),
     maxBooks: Number(form.settings.max_books_per_member || 0),
     fine: Number(form.settings.fine_per_day || 0),
-    reminders: form.settings.send_due_reminders === '1' ? 'On' : 'Off',
+    reminders: form.settings.send_due_reminders === '1' ? `On (${form.settings.reminder_days_before_due} day notice)` : 'Off',
 }));
 
 const submit = () => {
@@ -171,7 +171,7 @@ const submit = () => {
 
                             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 <label class="settings-surface rounded-2xl border border-slate-200/70 dark:border-slate-700/70 p-4 flex items-center justify-between">
-                                    <span class="text-xs font-bold text-slate-600 dark:text-slate-300">Send Due Reminders</span>
+                                    <span class="text-xs font-bold text-slate-600 dark:text-slate-300">Send Due And Overdue Emails</span>
                                     <input type="checkbox" v-model="form.settings.send_due_reminders" true-value="1" false-value="0" class="h-5 w-5 accent-indigo-600">
                                 </label>
                                 <label class="settings-surface rounded-2xl border border-slate-200/70 dark:border-slate-700/70 p-4 flex items-center justify-between">
@@ -183,7 +183,7 @@ const submit = () => {
                                     <input type="checkbox" v-model="form.settings.allow_member_renewal" true-value="1" false-value="0" class="h-5 w-5 accent-indigo-600">
                                 </label>
                                 <label class="settings-surface rounded-2xl border border-slate-200/70 dark:border-slate-700/70 p-4 flex items-center justify-between">
-                                    <span class="text-xs font-bold text-slate-600 dark:text-slate-300">Issue Receipt Enabled</span>
+                                    <span class="text-xs font-bold text-slate-600 dark:text-slate-300">Email Issue And Return Receipts</span>
                                     <input type="checkbox" v-model="form.settings.issue_receipt_enabled" true-value="1" false-value="0" class="h-5 w-5 accent-indigo-600">
                                 </label>
                             </div>

@@ -47,6 +47,7 @@ class HandleInertiaRequests extends Middleware
                     'can_view_reports' => $user ? in_array($user->role, ['principal', 'librarian', 'teacher'], true) : false,
                     'can_manage_circulation' => $user ? in_array($user->role, ['librarian', 'teacher'], true) : false,
                     'can_manage_catalog' => $user ? $user->role === 'librarian' : false,
+                    'can_manage_finances' => $user ? $user->role === 'librarian' : false,
                     'can_manage_settings' => $user ? $user->role === 'librarian' : false,
                 ],
             ],

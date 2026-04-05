@@ -23,6 +23,7 @@
                 <th>Book Title</th>
                 <th>Issued At</th>
                 <th>Due Date</th>
+                <th>Accession</th>
                 <th>Days Overdue</th>
             </tr>
         </thead>
@@ -33,6 +34,7 @@
                 <td>{{ $issue->book->title }}</td>
                 <td>{{ $issue->issued_at->format('Y-m-d') }}</td>
                 <td>{{ $issue->due_date->format('Y-m-d') }}</td>
+                <td>{{ $issue->copy?->accession_number ?? 'LEGACY' }}</td>
                 <td>{{ now()->diffInDays($issue->due_date) }}</td>
             </tr>
             @endforeach

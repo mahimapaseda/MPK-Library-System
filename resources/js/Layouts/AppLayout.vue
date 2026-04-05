@@ -92,6 +92,7 @@ const navLinks = computed(() => {
         { label: 'Categories', href: '/categories', icon: 'categories', hint: 'Shelves and genres', active: page.url.startsWith('/categories'), visible: !!permissions.can_manage_catalog },
         { label: 'Members', href: '/members', icon: 'members', hint: 'Readers', active: page.url.startsWith('/members'), visible: !!permissions.can_manage_catalog },
         { label: 'Book Issues', href: '/issues', icon: 'issues', hint: 'Circulation logs', active: page.url === '/issues', visible: !!permissions.can_manage_circulation },
+        { label: 'Charges', href: '/fines', icon: 'issues', hint: 'Paid and waived', active: page.url.startsWith('/fines'), visible: !!permissions.can_manage_finances },
         { label: 'Reports', href: '/reports', icon: 'reports', hint: 'Analytics', active: page.url.startsWith('/reports'), visible: !!permissions.can_view_reports },
         { label: 'Settings', href: '/settings', icon: 'settings', hint: 'System config', active: page.url.startsWith('/settings'), visible: !!permissions.can_manage_settings },
     ].filter((item) => item.visible);
@@ -111,7 +112,7 @@ const { isFullScreen, toggleFullScreen } = useFullScreen();
 </script>
 
 <template>
-    <div class="min-h-screen bg-transparent flex transition-colors duration-500 relative overflow-hidden">
+    <div class="h-screen bg-transparent flex transition-colors duration-500 relative overflow-hidden">
         <!-- Background decorative blobs -->
         <div class="absolute top-0 -left-4 w-72 h-72 bg-indigo-500/10 dark:bg-indigo-500/5 rounded-full blur-3xl opacity-50"></div>
         <div class="absolute bottom-0 -right-4 w-96 h-96 bg-rose-500/10 dark:bg-rose-500/5 rounded-full blur-3xl opacity-50"></div>

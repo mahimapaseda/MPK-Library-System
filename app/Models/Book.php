@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use App\Models\Category;
 use App\Models\BookIssue;
+use App\Models\BookCopy;
 
 use App\Traits\LogsActivity;
 
@@ -38,5 +39,10 @@ class Book extends Model
     public function issues()
     {
         return $this->hasMany(BookIssue::class);
+    }
+
+    public function copies()
+    {
+        return $this->hasMany(BookCopy::class);
     }
 }

@@ -2,9 +2,12 @@
 
 namespace Database\Seeders;
 
+use App\Models\BookIssue;
+use App\Models\Fine;
+use App\Services\BookInventoryService;
+use Carbon\Carbon;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
-use Carbon\Carbon;
 
 class BookIssueSeeder extends Seeder
 {
@@ -15,51 +18,66 @@ class BookIssueSeeder extends Seeder
     {
         $books = \App\Models\Book::all();
         $members = \App\Models\Member::all();
+        $inventoryService = new BookInventoryService();
 
         if ($books->isEmpty() || $members->isEmpty()) {
-            return; // Skip if no books or members
+            return;
         }
 
-        // Create 20 sample issues with various statuses
-        $statuses = ['issued', 'returned', 'overdue', 'lost'];
+        $statuses = ['issued', 'returned', 'overdue', 'lost', 'damaged'];
         $now = Carbon::now();
 
         for ($i = 0; $i < 20; $i++) {
             $book = $books->random();
-            $member = $members->random();
-            $status = $statuses[array_rand($statuses)];
-
-            $issued_at = $now->copy()->subDays(rand(0, 60));
-            $daysLoan = rand(7, 21);
-            $due_date = $issued_at->copy()->addDays($daysLoan);
-
-            // Determine issued_at date based on status
-            if ($status === 'issued') {
-                $issued_at = $now->copy()->subDays(rand(1, 7));
-                $due_date = $issued_at->copy()->addDays($daysLoan);
-            } elseif ($status === 'overdue') {
-                $issued_at = $now->copy()->subDays(rand(20, 45));
-                $due_date = $issued_at->copy()->addDays(rand(7, 14));
-            } elseif ($status === 'returned') {
-                $issued_at = $now->copy()->subDays(rand(5, 50));
-                $due_date = $issued_at->copy()->addDays(rand(7, 21));
-            } elseif ($status === 'lost') {
-                $issued_at = $now->copy()->subDays(rand(50, 120));
-                $due_date = $issued_at->copy()->addDays(14);
+            if ($book->available_quantity <= 0) {
+                continue;
             }
 
-            \App\Models\BookIssue::create([
+            $member = $members->random();
+            $status = $statuses[array_rand($statuses)];
+            $issuedAt = $now->copy()->subDays(rand(3, 60));
+            $dueDate = $issuedAt->copy()->addDays(rand(7, 21));
+            $copy = $inventoryService->reserveAvailableCopy($book);
+
+            if (! $copy) {
+                continue;
+            }
+
+            $issue = BookIssue::query()->create([
                 'book_id' => $book->id,
+                'book_copy_id' => $copy->id,
                 'member_id' => $member->id,
-                'issued_at' => $issued_at,
-                'due_date' => $due_date,
-                'returned_at' => in_array($status, ['returned', 'lost']) ? $now->copy()->subDays(rand(0, 10)) : null,
-                'status' => $status,
+                'issued_at' => $issuedAt,
+                'due_date' => $dueDate,
+                'status' => in_array($status, ['issued', 'overdue'], true) ? $status : 'issued',
             ]);
 
-            // Update book available quantity
-            if ($status === 'issued' || $status === 'overdue') {
-                $book->decrement('available_quantity');
+            if ($status === 'returned') {
+                $issue->update([
+                    'status' => 'returned',
+                    'returned_at' => $now->copy()->subDays(rand(0, 10)),
+                ]);
+                $inventoryService->markCopyAvailable($copy);
+                continue;
+            }
+
+            if (in_array($status, ['lost', 'damaged'], true)) {
+                $fee = rand(500, 3000);
+                $issue->update([
+                    'status' => $status,
+                    'returned_at' => $status === 'damaged' ? $now->copy()->subDays(rand(0, 10)) : null,
+                    'resolved_at' => $now->copy()->subDays(rand(0, 10)),
+                    'condition_notes' => fake()->sentence(),
+                    'condition_fee' => $fee,
+                ]);
+                $inventoryService->markCopyIncident($copy, $status);
+                Fine::query()->create([
+                    'book_issue_id' => $issue->id,
+                    'member_id' => $member->id,
+                    'amount' => $fee,
+                    'status' => 'unpaid',
+                ]);
+                continue;
             }
         }
     }

@@ -27,6 +27,13 @@ const reports = [
         color: 'indigo'
     },
     {
+        title: 'Incidents Report',
+        description: 'Dedicated export of lost and damaged copy incidents, including accession numbers, notes, and charges.',
+        href: '/reports/incidents',
+        icon: 'M12 9v3m0 4h.01M7.062 5.874A10.95 10.95 0 0112 4.5c1.72 0 3.347.396 4.796 1.102m2.142 1.272A10.956 10.956 0 0121 12c0 6.075-4.925 11-11 11S-1 18.075-1 12A10.956 10.956 0 013.062 5.874',
+        color: 'amber'
+    },
+    {
         title: 'AI Strategy Report',
         description: 'Actionable library intelligence report including risk alerts and strategic recommendations.',
         href: '/reports/ai-strategy',
@@ -82,7 +89,8 @@ const getColorClasses = (color) => {
     const themes = {
         rose: 'bg-rose-500/10 text-rose-600 dark:text-rose-400',
         indigo: 'bg-indigo-500/10 text-indigo-600 dark:text-indigo-400',
-        violet: 'bg-violet-500/10 text-violet-600 dark:text-violet-400'
+        violet: 'bg-violet-500/10 text-violet-600 dark:text-violet-400',
+        amber: 'bg-amber-500/10 text-amber-600 dark:text-amber-400'
     };
     return themes[color] || themes.indigo;
 };
@@ -155,7 +163,7 @@ const getColorClasses = (color) => {
             <!-- Registry Center: PDF Reports -->
             <div>
                 <div class="text-[10px] font-black text-slate-600 dark:text-slate-400 uppercase tracking-widest mb-4 px-2">Export Registry</div>
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
                     <div v-for="report in reports" :key="report.href"
                         class="glass-ghost p-6 rounded-3xl group relative overflow-hidden flex flex-col justify-between h-48 sm:h-auto">
                         <div class="flex items-start justify-between gap-4">

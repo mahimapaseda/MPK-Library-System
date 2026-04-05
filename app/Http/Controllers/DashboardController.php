@@ -42,7 +42,7 @@ class DashboardController extends Controller
         return Inertia::render('Dashboard', [
             'stats' => $stats,
             'ai_insights' => $insightsService->buildDashboardInsights(),
-            'recent_issues' => BookIssue::with(['book', 'member'])
+            'recent_issues' => BookIssue::with(['book', 'member', 'copy'])
                 ->latest()
                 ->take(5)
                 ->get(),

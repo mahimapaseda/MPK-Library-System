@@ -76,7 +76,7 @@ const { isFullScreen, toggleFullScreen } = useFullScreen();
                             <tr class="text-[10px] font-black uppercase tracking-widest text-slate-600 dark:text-slate-500">
                                 <th class="px-8 py-4">Resource Details</th>
                                 <th class="px-8 py-4 text-center">Issued At</th>
-                                <th class="px-8 py-4 text-center">Returned At</th>
+                                <th class="px-8 py-4 text-center">Closed At</th>
                                 <th class="px-8 py-4 text-center">Due Date</th>
                                 <th class="px-8 py-4 text-right">Circulation Status</th>
                             </tr>
@@ -86,12 +86,13 @@ const { isFullScreen, toggleFullScreen } = useFullScreen();
                                 <td class="px-8 py-6">
                                     <div class="font-black text-sm text-slate-800 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">{{ item.book.title }}</div>
                                     <div class="text-[10px] font-bold text-slate-600 dark:text-slate-500 uppercase tracking-widest">{{ item.book.author }}</div>
+                                    <div v-if="item.copy?.accession_number" class="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest mt-1">{{ item.copy.accession_number }}</div>
                                 </td>
                                 <td class="px-8 py-6 text-center text-xs font-bold text-slate-400">
                                     {{ new Date(item.issued_at).toLocaleDateString() }}
                                 </td>
-                                <td class="px-8 py-6 text-center text-xs font-bold" :class="item.returned_at ? 'text-emerald-400' : 'text-slate-600'">
-                                    {{ item.returned_at ? new Date(item.returned_at).toLocaleDateString() : 'N/A' }}
+                                <td class="px-8 py-6 text-center text-xs font-bold" :class="item.returned_at || item.resolved_at ? 'text-emerald-400' : 'text-slate-600'">
+                                    {{ item.returned_at || item.resolved_at ? new Date(item.returned_at || item.resolved_at).toLocaleDateString() : 'N/A' }}
                                 </td>
                                 <td class="px-8 py-6 text-center">
                                     <span class="px-2 py-1 rounded bg-slate-900 border border-slate-800 text-[10px] font-black uppercase tracking-tight" :class="new Date(item.due_date) < new Date() && !item.returned_at ? 'text-rose-500' : 'text-slate-500'">
@@ -99,7 +100,13 @@ const { isFullScreen, toggleFullScreen } = useFullScreen();
                                     </span>
                                 </td>
                                 <td class="px-8 py-6 text-right">
-                                    <span class="px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border" :class="item.status === 'issued' ? 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20' : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'">
+                                    <span class="px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border" :class="{
+                                        'bg-indigo-500/10 text-indigo-400 border-indigo-500/20': item.status === 'issued',
+                                        'bg-emerald-500/10 text-emerald-400 border-emerald-500/20': item.status === 'returned',
+                                        'bg-rose-500/10 text-rose-400 border-rose-500/20': item.status === 'overdue',
+                                        'bg-slate-500/10 text-slate-400 border-slate-500/20': item.status === 'lost',
+                                        'bg-orange-500/10 text-orange-400 border-orange-500/20': item.status === 'damaged',
+                                    }">
                                         {{ item.status }}
                                     </span>
                                 </td>
