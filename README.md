@@ -1,174 +1,219 @@
 # MPK Library System
 
-MPK Library System is a Laravel + Inertia + Vue application for school and institutional library operations. It supports catalog management, accession-level copy tracking, issuing/returns, incident handling (lost/damaged), fines, role-based access control, member self-service, analytics, and scheduled reminder emails.
+Build a library desk that actually feels alive.
 
-## Current Stack
+MPK Library System is a Laravel + Inertia + Vue platform for schools and institutions that need real circulation workflows: accession-level copies, fast issue/return operations, incident handling, fines, role-aware access, member self-service, analytics, and scheduled reminders.
 
-- Backend: Laravel 13, PHP 8.3+
-- Frontend: Vue 3, Inertia.js, Vite 6, Tailwind CSS 4
-- Database: SQLite by default (works with MySQL/PostgreSQL if configured)
-- Reporting: barryvdh/laravel-dompdf (PDF exports)
-- Notifications: Laravel Notifications (mail channel)
+## Why This Project Exists
 
-## Feature Overview
+Most library apps are either too basic for day-to-day desk reality or too heavy for small teams.
 
-- Dashboard with cached KPI cards, trends, category distribution, and AI insight cards
-- Books module with copy-level accession tracking
-- Member management (students/teachers/staff)
-- Issue desk + POS issue flow with search endpoints
-- Return flow with overdue fine generation
-- Lost/Damaged incident workflow with optional charges
-- Fine administration (paid/waived with resolver audit trail)
-- Member portal (separate guard) for loans/history/fines
-- PDF reports: overdue, inventory summary, incidents, AI strategy
-- Scheduled reminders via custom command `library:send-notifications`
+This project aims for the middle path:
 
-## Roles and Access
+- operationally practical for librarians
+- technically maintainable for developers
+- fast enough for live counters and busy school periods
 
-Role checks are implemented through `user.role` and custom middleware.
+## At A Glance
 
-- `librarian`: full access (books, categories, members, issues, fines, settings, reports)
-- `teacher`: issue and report access
-- `principal`: report access
-- `member` guard: separate login for member portal
+| Layer | Technology |
+| --- | --- |
+| Backend | Laravel 13, PHP 8.3+ |
+| Frontend | Vue 3, Inertia.js, Vite 6, Tailwind CSS 4 |
+| Database | SQLite default (MySQL/PostgreSQL supported by configuration) |
+| Reports | barryvdh/laravel-dompdf |
+| Notifications | Laravel Notifications (mail channel) |
 
-## Architecture Summary
+## Core Capabilities
 
-- Server-rendered SPA architecture with Inertia (no separate public REST API layer)
-- Domain logic is concentrated in services:
-	- `BookInventoryService` for copy lifecycle and quantity sync
-	- `LibraryNotificationService` for receipts/reminders/overdue alerts
-	- `AiInsightsService` for dashboard/report recommendations and alert heuristics
-- Core business state is modeled by `Book`, `BookCopy`, `BookIssue`, `Fine`, `Member`, `Setting`
-- Activity auditing is handled by `LogsActivity` trait + `ActivityLog` model
+- Dashboard with cached KPIs, trend charts, and AI insight cards
+- Book catalog + accession-level copy tracking
+- Member management for student, teacher, and staff types
+- Issue desk and POS issue flow with search endpoints
+- Return handling with overdue fine calculation
+- Lost and damaged incident workflows with optional charges
+- Fine administration with paid and waived states + resolver audit trail
+- Member portal with separate guard for personal loan history and fines
+- PDF exports: overdue, inventory summary, incidents, AI strategy
+- Daily reminder command: library:send-notifications
 
-## Data Model (High Level)
+## Role Map
 
-- `books` (title-level metadata + aggregate quantities)
-- `book_copies` (accession_number, sequence_number, status)
-- `book_issues` (book/member/copy link + due/return/resolution state)
-- `fines` (amount + unpaid/paid/waived + resolver metadata)
-- `members` (portal-capable auth entity under `member` guard)
-- `users` (staff auth + role)
-- `settings` (runtime policy knobs, cached via `SettingCache`)
-- `activity_logs` (CRUD and manual action trail)
+Authorization is handled through user.role and custom middleware.
 
-## Request Flows
+- librarian: full access to books, categories, members, issues, fines, settings, and reports
+- teacher: issue and report access
+- principal: report access
+- member guard: separate login context for the member portal
 
-- Issue:
-	1. Validate member and policy limits.
-	2. Reserve next available copy with row lock.
-	3. Create `book_issues` record.
-	4. Dispatch issue receipt after commit.
+## Architecture Snapshot
 
-- Return:
-	1. Mark issue returned and release copy.
-	2. Compute overdue days using configured grace period.
-	3. Create/update fine if chargeable.
-	4. Dispatch return receipt after commit.
+This is a server-driven SPA using Inertia, so you get modern frontend UX without introducing a separate public API surface.
 
-- Lost/Damaged:
-	1. Close issue with incident status.
-	2. Mark copy incident state.
-	3. Optionally create/update fine.
+Business logic is organized in service classes:
+
+- BookInventoryService: copy lifecycle, stock alignment, and accession handling
+- LibraryNotificationService: issue/return receipts and reminder automation
+- AiInsightsService: dashboard strategy insights and alert heuristics
+
+Key domain entities:
+
+- Book
+- BookCopy
+- BookIssue
+- Fine
+- Member
+- Setting
+
+Audit trail support:
+
+- LogsActivity trait
+- ActivityLog records (model changes and action metadata)
+
+## Data Model Highlights
+
+- books: title metadata + aggregate stock fields
+- book_copies: accession_number, sequence_number, status, rack location
+- book_issues: links member/book/copy with issue lifecycle fields
+- fines: unpaid/paid/waived with resolution metadata
+- members: member identity + portal credentials
+- users: staff login + role
+- settings: runtime policy values, cached through SettingCache
+- activity_logs: action history for key model operations
+
+## Circulation Logic (Simplified)
+
+Issue flow
+
+1. Validate member and policy constraints.
+2. Reserve the next available copy with row lock.
+3. Create the issue record.
+4. Send issue receipt after transaction commit.
+
+Return flow
+
+1. Mark issue returned and release copy.
+2. Compute overdue days with grace-period settings.
+3. Create or update fine when chargeable.
+4. Send return receipt after commit.
+
+Lost or damaged flow
+
+1. Close issue with incident status.
+2. Mark copy as lost or damaged.
+3. Create or update charge when needed.
 
 ## Quick Start
 
-### 1. Install dependencies and initialize
+### 1) Project setup
 
 ```bash
 composer run setup
 ```
 
-This command installs Composer + npm packages, creates `.env` if missing, generates `APP_KEY`, runs migrations, and builds frontend assets.
+What this does:
 
-### 2. Seed demo data
+- installs Composer dependencies
+- creates .env from .env.example if missing
+- generates APP_KEY
+- runs migrations
+- installs npm dependencies
+- builds frontend assets
+
+### 2) Seed sample data
 
 ```bash
 php artisan db:seed
 ```
 
-### 3. Run development servers
+### 3) Run in development
 
-Option A (recommended):
+Recommended:
 
 ```bash
 composer run dev
 ```
 
-Option B (manual, useful if shell quoting differs on Windows):
+Manual option (useful on some Windows shells):
 
 ```bash
 php artisan serve --host=127.0.0.1 --port=8000
 npm run dev -- --host 127.0.0.1 --port 5173
 ```
 
-### 4. Optional Windows helper
+Optional Windows helper:
 
 ```powershell
 .\Run-Site.ps1 -Setup -Seed
 ```
 
-## Default Credentials
+## Default Admin Login
 
-After `php artisan db:seed`:
+After seeding:
 
-- Admin email: `admin@school.lk`
-- Admin password: `password`
+- Email: admin@school.lk
+- Password: password
 
-## Notifications and Scheduler
+## Scheduler and Notifications
 
-- Receipts: issue and return emails (when member has email)
-- Reminders: due-soon and overdue alerts
-- Scheduled command: `library:send-notifications`
-- Schedule time: daily at `08:00` (see `routes/console.php`)
+Notification types:
 
-Production cron example:
+- issue receipt emails
+- return receipt emails
+- due reminder emails
+- overdue alerts
+
+Scheduled command:
+
+- library:send-notifications
+- scheduled daily at 08:00
+
+Production cron:
 
 ```bash
 * * * * * php /path/to/artisan schedule:run >> /dev/null 2>&1
 ```
 
-## Tests
+## Testing
 
-Feature coverage includes:
+Current feature test focus areas:
 
-- issue condition workflow (lost/damaged)
-- fine administration (paid/waived)
-- notification behavior and overdue auto-marking
+- issue condition workflow (lost and damaged)
+- fine administration (paid and waived)
+- reminder and overdue notification behavior
 
-Run all tests:
+Run tests:
 
 ```bash
 php artisan test
 ```
 
-## System Analysis (April 2026)
+## Technical Review (April 2026)
 
-### Strengths
+Strengths
 
-- Good domain separation with dedicated services for inventory, notifications, and analytics.
-- Copy-level inventory modeling supports realistic circulation and incident tracking.
-- Transaction + lock usage in issue/return paths improves consistency under concurrency.
-- Practical role segmentation and separate member guard.
-- Useful PDF reporting and scheduled operational automation.
-- Activity logging integrated into key models.
+- service-oriented domain logic keeps controllers focused
+- accession-level copy tracking matches real library operations
+- transactional and lock-based issue flow improves consistency
+- clear role segmentation including separate member guard
+- useful operational reporting and scheduled automations
+- integrated activity logging for traceability
 
-### Observed Risks and Gaps
+Known gaps
 
-- Dashboard month aggregation currently uses SQLite-specific `strftime`, which can require adaptation for MySQL/PostgreSQL.
-- `spatie/laravel-permission` is installed but not wired into route authorization (custom role middleware is used instead).
-- Some seeded members do not include portal credentials by default; member portal login is email/password based.
-- Cache invalidation is manual in multiple controllers; missing invalidation points can produce stale analytics.
-- Notification delivery is synchronous unless queue driver/worker is configured for async handling.
+- monthly dashboard grouping uses SQLite-specific strftime semantics
+- spatie/laravel-permission is installed but custom role middleware is used for route control
+- seeded member data does not consistently include portal credentials
+- cache invalidation relies on manual controller-level forget calls
+- notifications run synchronously unless queue infrastructure is enabled
 
-### Recommended Next Improvements
+Suggested next upgrades
 
-1. Make reporting date queries database-agnostic for full multi-DB portability.
-2. Choose one RBAC strategy: either remove unused permission package or fully integrate it.
-3. Add policy/authorization tests per role and per route group.
-4. Add queue-backed notifications for high-volume reminder runs.
-5. Centralize cache invalidation into domain events/listeners to reduce drift.
+1. make date aggregation database-agnostic
+2. consolidate RBAC strategy around one approach
+3. expand authorization tests per role and route group
+4. move notifications to queued delivery for larger deployments
+5. centralize cache invalidation via domain events/listeners
 
 ## License
 
