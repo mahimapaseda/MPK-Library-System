@@ -1,8 +1,10 @@
-# MPK Library System
+# MPK Library System - Open Source Library Management Software
 
-Build a library desk that actually feels alive.
+### Professional School Library Management & Integrated Library System (ILS)
 
-MPK Library System is a Laravel + Inertia + Vue platform for schools and institutions that need real circulation workflows: accession-level copies, fast issue/return operations, incident handling, fines, role-aware access, member self-service, analytics, and scheduled reminders.
+**MPK Library System** is a high-performance, open-source **Library Management System** built with **Laravel 13**, **Inertia.js**, and **Vue 3**. Designed specifically for schools, colleges, and small institutions, it provides a comprehensive **Integrated Library System (ILS)** experience that feels alive and operationally practical.
+
+Whether you are looking for an **automated circulation management** tool or a complete **book inventory system**, MPK Library System delivers real circulation workflows: accession-level copies, fast issue/return operations, incident handling, fines, role-aware access, member self-service, and AI-driven analytics.
 
 ## Why This Project Exists
 
@@ -103,46 +105,48 @@ Lost or damaged flow
 2. Mark copy as lost or damaged.
 3. Create or update charge when needed.
 
-## Quick Start
+## Quick Start & Installation
 
-### 1) Project setup
+To get the system running locally for development or testing, follow these steps.
+
+### 1) Automated Project Setup
+
+The fastest way to install all dependencies, generate keys, and run migrations is using the built-in setup command:
 
 ```bash
 composer run setup
 ```
 
-What this does:
+**What this does under the hood:**
+- Installs PHP/Composer dependencies
+- Creates `.env` from `.env.example`
+- Generates `APP_KEY`
+- Runs database migrations (SQLite by default)
+- Installs npm packages
+- Builds optimized frontend assets
 
-- installs Composer dependencies
-- creates .env from .env.example if missing
-- generates APP_KEY
-- runs migrations
-- installs npm dependencies
-- builds frontend assets
+### 2) Seed Sample Data (Optional)
 
-### 2) Seed sample data
+If you want to test the system with pre-populated books, members, and issues:
 
 ```bash
 php artisan db:seed
 ```
 
-### 3) Run in development
+### 3) Run the Application
 
-Recommended:
+To start the development server and the frontend compiler simultaneously:
 
 ```bash
 composer run dev
 ```
 
-Manual option (useful on some Windows shells):
+The site will be accessible at:
+- **Backend/App**: [http://127.0.0.1:8000](http://127.0.0.1:8000)
+- **Vite (Frontend)**: [http://localhost:5173](http://localhost:5173)
 
-```bash
-php artisan serve --host=127.0.0.1 --port=8000
-npm run dev -- --host 127.0.0.1 --port 5173
-```
-
-Optional Windows helper:
-
+### Windows Users
+You can also use the included PowerShell helper to handle everything in one go:
 ```powershell
 .\Run-Site.ps1 -Setup -Seed
 ```
@@ -218,3 +222,11 @@ Suggested next upgrades
 ## License
 
 MIT
+
+---
+
+## SEO & Discovery (GEO)
+
+*Keywords: Library Management System, Open Source Library Software, Laravel Library App, Vue.js Integrated Library System, School Library Management System, ILS, Automated Circulation, Book Inventory Management, Library Cataloging Software.*
+
+*Target Platforms: Schools, Colleges, Technical Institutes, Small Public Libraries.*
